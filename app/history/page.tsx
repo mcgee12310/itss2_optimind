@@ -34,7 +34,8 @@ interface Analytics {
 }
 
 // --- Main Component ---
-export default function HistoryPage() {
+// Move client hooks into an inner client component and wrap with Suspense in the default export
+function HistoryInner() {
   const [sessions, setSessions] = useState<StudySession[]>([]);
   const [analytics, setAnalytics] = useState<Analytics | null>(null);
   const [viewMode, setViewMode] = useState<"day" | "week" | "month">("day");
@@ -237,6 +238,15 @@ export default function HistoryPage() {
   );
 }
 
+import React, { Suspense } from "react";
+
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen items-center justify-center text-white"><div className="text-xl">Đang tải...</div></div>}>
+      <HistoryInner />
+    </Suspense>
+  );
+}
 // Helper Components
 function TabButton({ active, onClick, icon, label }: any) {
   return (

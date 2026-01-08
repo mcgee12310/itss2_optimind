@@ -15,17 +15,15 @@ function getUserIdFromCookie(req: Request): string | null {
 }
 
 // DELETE /api/messages/rooms/[roomId]/members/[memberId] - Remove member from room
-export async function DELETE(
-  req: Request,
-  { params }: { params: { roomId: string; memberId: string } }
-) {
+export async function DELETE(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId, memberId } = params;
+    const params = await (context?.params ?? {});
+    const { roomId, memberId } = params as { roomId: string; memberId: string };
 
     // Check if user is a member of this room
     const requesterMember = await prisma.roomMember.findFirst({

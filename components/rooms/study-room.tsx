@@ -155,8 +155,9 @@ const PeopleSidebar = ({ isOpen, onClose, roomId }: { isOpen: boolean; onClose: 
         {/* Participants List */}
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           {uniqueParticipants.map((participant) => {
-            const isMicMuted = !participant.publishedTracks.includes('audio');
-            const isCamMuted = !participant.publishedTracks.includes('video');
+            const published = participant.publishedTracks.map(String);
+            const isMicMuted = !published.includes('audio');
+            const isCamMuted = !published.includes('video');
             
             return (
               <div

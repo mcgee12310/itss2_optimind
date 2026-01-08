@@ -15,17 +15,15 @@ function getUserIdFromCookie(req: Request): string | null {
 }
 
 // GET /api/messages/rooms/[roomId] - Get messages for a specific room
-export async function GET(
-  req: Request,
-  { params }: { params: { roomId: string } }
-) {
+export async function GET(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId } = params;
+    const params = await (context?.params ?? {});
+    const { roomId } = params as { roomId: string };
 
     // Check if user is a member of this room
     const member = await prisma.roomMember.findFirst({
@@ -83,17 +81,15 @@ export async function GET(
 }
 
 // POST /api/messages/rooms/[roomId] - Send a message to a room
-export async function POST(
-  req: Request,
-  { params }: { params: { roomId: string } }
-) {
+export async function POST(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId } = params;
+    const params = await (context?.params ?? {});
+    const { roomId } = params as { roomId: string };
     const body = await req.json();
     const { content } = body;
 
@@ -160,17 +156,15 @@ export async function POST(
 }
 
 // PATCH /api/messages/rooms/[roomId] - Update room (rename, etc.)
-export async function PATCH(
-  req: Request,
-  { params }: { params: { roomId: string } }
-) {
+export async function PATCH(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId } = params;
+    const params = await (context?.params ?? {});
+    const { roomId } = params as { roomId: string };
     const body = await req.json();
     const { name } = body;
 
@@ -206,17 +200,15 @@ export async function PATCH(
 }
 
 // DELETE /api/messages/rooms/[roomId] - Leave or delete room
-export async function DELETE(
-  req: Request,
-  { params }: { params: { roomId: string } }
-) {
+export async function DELETE(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId } = params;
+    const params = await (context?.params ?? {});
+    const { roomId } = params as { roomId: string };
 
     // Check if user is a member of this room
     const member = await prisma.roomMember.findFirst({

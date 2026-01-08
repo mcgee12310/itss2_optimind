@@ -15,17 +15,15 @@ function getUserIdFromCookie(req: Request): string | null {
 }
 
 // POST /api/messages/rooms/[roomId]/members - Add members to room
-export async function POST(
-  req: Request,
-  { params }: { params: { roomId: string } }
-) {
+export async function POST(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { roomId } = params;
+    const params = await (context?.params ?? {});
+    const { roomId } = params as { roomId: string };
     const body = await req.json();
     const { memberIds } = body;
 

@@ -101,15 +101,13 @@ function parseTime(dateStr: string | Date, timeStr: string): Date | null {
 }
 
 // DELETE: Xóa task
-export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } } 
-) {
+export async function DELETE(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = await params; 
+    const params = await (context?.params ?? {});
+    const { id } = params as { id: string };
 
     await prisma.task.delete({
       where: { id: id, userId }, 
@@ -123,15 +121,13 @@ export async function DELETE(
 }
 
 // PATCH: Cập nhật task (Status, Title, Date, TimeSlot...)
-export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(req: Request, context: any) {
   try {
     const userId = getUserIdFromCookie(req);
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { id } = await params; 
+    const params = await (context?.params ?? {});
+    const { id } = params as { id: string };
     const body = await req.json();
     
     // Lấy các trường từ body
