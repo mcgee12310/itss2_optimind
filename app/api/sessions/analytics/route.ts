@@ -147,12 +147,12 @@ export async function GET(req: Request) {
 
     // 3. Tính toán thống kê cơ bản
     const totalSessions = sessions.length;
-    const totalMinutes = sessions.reduce((sum, s) => sum + (s.duration || 0) / 60, 0);
+    const totalMinutes = sessions.reduce((sum: number, s) => sum + (s.duration || 0) / 60, 0);
     const avgFocusScore = totalSessions > 0
-        ? sessions.reduce((sum, s) => sum + (s.focusScore || 0), 0) / totalSessions
-        : 0;
-    const totalCoins = sessions.reduce((sum, s) => sum + s.coinsEarned, 0);
-    const totalExp = sessions.reduce((sum, s) => sum + s.expEarned, 0);
+      ? sessions.reduce((sum: number, s) => sum + (s.focusScore || 0), 0) / totalSessions
+      : 0;
+    const totalCoins = sessions.reduce((sum: number, s) => sum + s.coinsEarned, 0);
+    const totalExp = sessions.reduce((sum: number, s) => sum + s.expEarned, 0);
 
     // 4. Tính Streak (Chuỗi ngày liên tục)
     const allSessionsForStreak = await prisma.studySession.findMany({
