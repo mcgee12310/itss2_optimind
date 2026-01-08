@@ -45,7 +45,17 @@ export async function GET(req: Request) {
     });
 
     return NextResponse.json({
-      requests: requests.map((req) => ({
+      requests: requests.map((req: {
+        id: string;
+        user1: {
+          id: string;
+          name?: string;
+          username?: string;
+          avatar?: string;
+          avatarUrl?: string;
+        };
+        createdAt: Date;
+      }) => ({
         id: req.id,
         user: {
           id: req.user1.id,
