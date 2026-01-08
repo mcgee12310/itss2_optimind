@@ -34,7 +34,7 @@ export default function RankingPage() {
   const fetchData = async () => {
     try {
       // Fetch current user
-      const userRes = await fetch("/api/me");
+      const userRes = await fetch("/api/auth/me");
       if (userRes.ok) {
         const userData = await userRes.json();
         setCurrentUser(userData.user);

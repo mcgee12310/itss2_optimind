@@ -108,7 +108,7 @@ export default function SettingsPage() {
 
 		try {
 			setLoading(true);
-			const res = await fetch("/api/change-password", {
+			const res = await fetch("/api/auth/change-password", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({
