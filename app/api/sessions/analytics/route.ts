@@ -165,7 +165,7 @@ export async function GET(req: Request) {
     if (allSessionsForStreak.length > 0) {
       const today = new Date();
       // Nhóm theo ngày (YYYY-MM-DD)
-      const uniqueDays = Array.from(new Set(allSessionsForStreak.map(s => 
+      const uniqueDays = Array.from(new Set(allSessionsForStreak.map((s: any) => 
         new Date(s.startTime).toISOString().split('T')[0]
       ))) as string[];
       uniqueDays.sort();
@@ -208,7 +208,7 @@ export async function GET(req: Request) {
         entry.focus += (s.focusScore || 0);
         entry.count += 1;
       });
-      chartData = Array.from(chartMap.values()).map((item) => ({
+      chartData = Array.from(chartMap.values()).map((item: any) => ({
         date: item.date,
         minutes: Math.round(item.duration),
         focus: Math.round(item.focus / Math.max(1, item.count)),

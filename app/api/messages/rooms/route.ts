@@ -65,7 +65,7 @@ export async function GET(req: Request) {
       },
     });
 
-    const rooms = roomMembers.map((rm) => ({
+    const rooms = roomMembers.map((rm: any) => ({
       id: rm.room.id,
       name: rm.room.name,
       type: rm.room.type,
@@ -74,7 +74,7 @@ export async function GET(req: Request) {
       lastMessage: rm.room.messages[0]
         ? `${rm.room.messages[0].user.name}: ${rm.room.messages[0].content}`
         : "Chưa có tin nhắn",
-      members: rm.room.members.map((m) => ({
+      members: rm.room.members.map((m: any) => ({
         id: m.user.id,
         name: m.user.name || m.user.username || "User",
         avatar: m.user.avatar || m.user.avatarUrl || "https://github.com/shadcn.png",
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
           id: existingRoom.id,
           name: existingRoom.name,
           type: existingRoom.type,
-          members: existingRoom.members.map((m) => ({
+          members: existingRoom.members.map((m: any) => ({
             id: m.user.id,
             name: m.user.name || m.user.username || "User",
             avatar: m.user.avatar || m.user.avatarUrl || "https://github.com/shadcn.png",
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
       id: room.id,
       name: room.name,
       type: room.type,
-      members: room.members.map((m) => ({
+      members: room.members.map((m: any) => ({
         id: m.user.id,
         name: m.user.name || m.user.username || "User",
         avatar: m.user.avatar || m.user.avatarUrl || "https://github.com/shadcn.png",

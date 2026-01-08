@@ -59,7 +59,7 @@ export async function GET(req: Request, context: any) {
     });
 
     return NextResponse.json({
-      messages: messages.map((msg) => ({
+      messages: messages.map((msg: any) => ({
         id: msg.id,
         senderId: msg.userId,
         sender: {

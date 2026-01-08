@@ -130,7 +130,7 @@ export async function GET(req: Request) {
     });
 
    
-    const sanitizedRooms = rooms.map((room) => ({
+    const sanitizedRooms = rooms.map((room: any) => ({
       ...room,
       isPrivate: !!room.password && room.password.length > 0, 
       password: null, 
