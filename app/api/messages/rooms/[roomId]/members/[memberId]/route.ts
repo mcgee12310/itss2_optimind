@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 
+type MemberWithUser = {
+  user: {
+    id: string;
+    name?: string | null;
+    username?: string | null;
+    avatar?: string | null;
+    avatarUrl?: string | null;
+  };
+};
+
 function getUserIdFromCookie(req: Request): string | null {
   const cookie = req.headers.get("cookie") || "";
   const userCookie = cookie.split(";").find((c) => c.trim().startsWith("user_data="));
@@ -79,7 +89,7 @@ export async function DELETE(req: Request, context: any) {
     });
 
     return NextResponse.json({
-      members: updatedMembers.map((m: any) => ({
+      members: updatedMembers.map((m: MemberWithUser) => ({
         id: m.user.id,
         name: m.user.name || m.user.username || "User",
         avatar: m.user.avatar || m.user.avatarUrl || "https://github.com/shadcn.png",
