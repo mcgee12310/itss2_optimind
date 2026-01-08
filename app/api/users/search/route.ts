@@ -78,13 +78,13 @@ export async function GET(req: Request) {
 
     // Create a map of friend statuses
     const friendStatusMap = new Map<string, 'pending' | 'accepted'>();
-    friendships.forEach((f) => {
+    friendships.forEach((f: any) => {
       const friendId = f.user1Id === userId ? f.user2Id : f.user1Id;
       friendStatusMap.set(friendId, f.status as 'pending' | 'accepted');
     });
 
     // Map results with friend status
-    const results = users.map((user) => {
+    const results = users.map((user: any) => {
       const friendStatus = friendStatusMap.get(user.id);
       return {
         id: user.id,
