@@ -1,41 +1,4 @@
-// "use client";
 
-// import { ParticipantView, useCallStateHooks } from "@stream-io/video-react-sdk";
-// import { User } from "lucide-react";
-
-// interface VideoParticipantProps {
-//   participant: any; // Type từ Stream SDK
-//   score?: number;
-//   showScore?: boolean;
-// }
-
-// export const VideoParticipant = ({ participant, score = 0, showScore = false }: VideoParticipantProps) => {
-//   return (
-//     <div className="relative w-full h-full bg-black">
-//       {/* Stream SDK Component để render video */}
-//       <ParticipantView participant={participant} />
-
-//       {/* Tên người dùng - always on top */}
-//       <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded backdrop-blur-sm z-20">
-//         {participant.name || participant.userId}
-//         {participant.isLocalParticipant && " (Bạn)"}
-//       </div>
-
-//       {/* Điểm số */}
-//       {showScore && (
-//         <div className="absolute top-2 right-2 z-20">
-//           <div className={`px-3 py-1 rounded-full font-bold text-sm backdrop-blur-md shadow-sm border ${
-//             score >= 80 ? "bg-green-500/20 border-green-500 text-green-400" :
-//             score >= 50 ? "bg-yellow-500/20 border-yellow-500 text-yellow-400" :
-//             "bg-red-500/20 border-red-500 text-red-400"
-//           }`}>
-//             {Math.round(score)}%
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
 
 "use client";
 
@@ -73,11 +36,11 @@ const CustomVideoPlaceholder = ({ participant }: { participant: any }) => {
   );
 };
 
-export const VideoParticipant = ({ 
-  participant, 
-  score = 0, 
+export const VideoParticipant = ({
+  participant,
+  score = 0,
   showScore = false,
-  className 
+  className
 }: VideoParticipantProps) => {
   const { isSpeaking, isLocalParticipant } = participant;
   // Logic hiển thị Mic: Tắt là Tắt, không nói nhiều
@@ -85,12 +48,12 @@ export const VideoParticipant = ({
 
   return (
     <div className={cn(
-      "relative w-full h-full bg-[#1e1e1e] rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 group border border-white/5 ring-1 ring-black/20", 
+      "relative w-full h-full bg-[#1e1e1e] rounded-3xl overflow-hidden shadow-2xl transition-all duration-300 group border border-white/5 ring-1 ring-black/20",
       className
     )}>
-      
-      <ParticipantView 
-        participant={participant} 
+
+      <ParticipantView
+        participant={participant}
         VideoPlaceholder={CustomVideoPlaceholder}
         className="w-full h-full [&_video]:w-full [&_video]:h-full [&_video]:object-cover [&_video]:scale-105"
       />
@@ -108,7 +71,7 @@ export const VideoParticipant = ({
         </div>
       ) : isSpeaking && (
         <div className="absolute top-4 left-4 z-30 animate-in fade-in slide-in-from-top-2">
-           <div className="flex items-center gap-2 bg-emerald-600/90 text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg border border-emerald-500/50 backdrop-blur-md">
+          <div className="flex items-center gap-2 bg-emerald-600/90 text-white text-[11px] font-bold px-3 py-1.5 rounded-full shadow-lg border border-emerald-500/50 backdrop-blur-md">
             <Mic className="w-3.5 h-3.5 animate-pulse" />
             <span>SPEAKING</span>
           </div>
@@ -119,14 +82,14 @@ export const VideoParticipant = ({
       <div className="absolute bottom-4 left-4 z-30 max-w-[85%]">
         <div className={cn(
           "flex items-center gap-2 px-3 py-1.5 rounded-xl backdrop-blur-xl border transition-all duration-300 shadow-sm",
-          isSpeaking 
-            ? "bg-blue-600/80 border-blue-400/50 shadow-blue-500/20" 
+          isSpeaking
+            ? "bg-blue-600/80 border-blue-400/50 shadow-blue-500/20"
             : "bg-black/40 border-white/10"
         )}>
-           <span className="text-white text-xs font-semibold truncate tracking-wide drop-shadow-md">
+          <span className="text-white text-xs font-semibold truncate tracking-wide drop-shadow-md">
             {participant.name || participant.userId}
             {isLocalParticipant && " (Bạn)"}
-           </span>
+          </span>
         </div>
       </div>
 
@@ -136,8 +99,8 @@ export const VideoParticipant = ({
           <div className={cn(
             "px-3 py-1.5 rounded-full font-bold text-xs backdrop-blur-xl border shadow-lg transition-colors tracking-wider",
             score >= 80 ? "bg-emerald-500/20 border-emerald-500 text-emerald-400" :
-            score >= 50 ? "bg-amber-500/20 border-amber-500 text-amber-400" :
-            "bg-rose-500/20 border-rose-500 text-rose-400"
+              score >= 50 ? "bg-amber-500/20 border-amber-500 text-amber-400" :
+                "bg-rose-500/20 border-rose-500 text-rose-400"
           )}>
             {Math.round(score)} PTS
           </div>
