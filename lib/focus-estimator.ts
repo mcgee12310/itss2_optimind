@@ -116,7 +116,7 @@ export class FocusEstimator {
    */
   private center(points: Landmark[]): Landmark {
     const sum = points.reduce(
-      (acc, p) => ({ x: acc.x + p.x, y: acc.y + p.y, z: acc.z + p.z }),
+      (acc: Landmark, p: Landmark) => ({ x: acc.x + p.x, y: acc.y + p.y, z: acc.z + p.z }),
       { x: 0, y: 0, z: 0 }
     );
     return {
@@ -301,15 +301,15 @@ export class FocusEstimator {
     if (this.nosePositionHistory.length < 2) return 0;
 
     const meanX =
-      this.nosePositionHistory.reduce((sum, p) => sum + p.x, 0) / this.nosePositionHistory.length;
+      this.nosePositionHistory.reduce((sum: number, p: Landmark) => sum + p.x, 0) / this.nosePositionHistory.length;
     const meanY =
-      this.nosePositionHistory.reduce((sum, p) => sum + p.y, 0) / this.nosePositionHistory.length;
+      this.nosePositionHistory.reduce((sum: number, p: Landmark) => sum + p.y, 0) / this.nosePositionHistory.length;
     const meanZ =
-      this.nosePositionHistory.reduce((sum, p) => sum + p.z, 0) / this.nosePositionHistory.length;
+      this.nosePositionHistory.reduce((sum: number, p: Landmark) => sum + p.z, 0) / this.nosePositionHistory.length;
 
     const variance =
       this.nosePositionHistory.reduce(
-        (sum, p) =>
+        (sum: number, p: Landmark) =>
           sum + Math.pow(p.x - meanX, 2) + Math.pow(p.y - meanY, 2) + Math.pow(p.z - meanZ, 2),
         0
       ) / this.nosePositionHistory.length;

@@ -63,7 +63,7 @@ export async function GET(req: Request) {
       // Nhóm theo ngày (YYYY-MM-DD)
       const uniqueDays = Array.from(
         new Set(
-          allSessions.map((s) =>
+          allSessions.map((s: { startTime: Date }) =>
             new Date(s.startTime).toISOString().split("T")[0]
           )
         )

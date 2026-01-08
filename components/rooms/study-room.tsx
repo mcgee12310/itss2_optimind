@@ -217,7 +217,7 @@ const PeopleSidebar = ({ isOpen, onClose, roomId }: { isOpen: boolean; onClose: 
 const StudyGrid = () => {
   const { useParticipants } = useCallStateHooks();
   const participants = useParticipants();
-  const uniqueParticipants = Array.from(new Map(participants.map(p => [p.userId, p])).values());
+  const uniqueParticipants = Array.from(new Map(participants.map((p: Participant) => [p.userId, p])).values());
 
   if (uniqueParticipants.length === 0) {
     return (
@@ -242,7 +242,7 @@ const StudyGrid = () => {
 
   return (
     <div className={cn("grid gap-3 md:gap-4 w-full h-full mx-auto p-3 md:p-4 overflow-y-auto", getGridCols())}>
-      {uniqueParticipants.map((p) => (
+      {uniqueParticipants.map((p: Participant) => (
         <div key={p.userId} className="aspect-video w-full h-fit transition-all duration-200 hover:scale-[1.02]">
           <VideoParticipant participant={p} showScore={false} />
         </div>

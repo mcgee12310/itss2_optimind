@@ -55,7 +55,7 @@ async function main() {
           expEarned: durationMinutes * 5 + (focusScore > 80 ? 50 : 0),
           // Tạo Focus Logs giả để vẽ biểu đồ chi tiết
           focusLogs: {
-            create: Array.from({ length: 10 }).map((_, idx) => ({
+            create: Array.from({ length: 10 }).map((_: unknown, idx: number) => ({
               score: Math.min(100, Math.max(0, focusScore + Math.floor(Math.random() * 30) - 15)), // Dao động quanh điểm TB
               timestamp: new Date(startTime.getTime() + (idx * (durationSeconds * 1000) / 10))
             }))

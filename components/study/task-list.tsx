@@ -89,7 +89,7 @@ const TaskListWidget: FC<TaskListWidgetProps> = ({ show, onClose }) => {
 	// Hàm toggle Task
 	const handleToggleTask = (id: string) => {
 		setTasks(
-			tasks.map((task) =>
+			tasks.map((task: Task) =>
 				task.id === id ? { ...task, completed: !task.completed } : task
 			)
 		);
@@ -112,7 +112,7 @@ const TaskListWidget: FC<TaskListWidgetProps> = ({ show, onClose }) => {
 	// MỚI: Lưu chỉnh sửa
 	const handleSaveEdit = (id: string) => {
 		setTasks(
-			tasks.map((task) =>
+			tasks.map((task: Task) =>
 				task.id === id
 					? { ...task, text: editingText, note: editingNote }
 					: task
