@@ -28,12 +28,12 @@ const createPrismaClient = () => {
       ? new PrismaClientConstructor({ adapter, log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'] })
       : new PrismaClientConstructor({ log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'] });
     return client as AnyPrismaClient;
-  } catch (e) {
+  } catch (e: any) {
     // If client creation fails (for example during a static build), return null and
     // avoid throwing during module initialization. Consumers will see errors when
     // they attempt to use the client at runtime.
     // eslint-disable-next-line no-console
-    console.warn('Prisma client could not be initialized at build-time:', e?.message || e);
+    console.warn('Prisma client could not be initialized at build-time:', (e as any)?.message || e);
     return null as any;
   }
 };
