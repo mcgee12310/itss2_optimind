@@ -6,13 +6,14 @@ import BattleRoom from "@/components/rooms/battle-room";
 import StudyRoom from "@/components/rooms/study-room";
 
 export default async function RoomPage({ params }: { params: Promise<{ id: string }> }) {
+  // 1. Await params
   const { id: roomId } = await params;
 
- 
+  // 2. Check User
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
- 
+  // 3. Check Room
   const room = await prisma.room.findUnique({
     where: { id: roomId },
     include: {

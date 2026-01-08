@@ -411,8 +411,8 @@ const TaskCalendar: FC = () => {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="tag-all"
-                    checked={isAllTagsSelected} // Binding state
-                    onCheckedChange={toggleAllTags} // Handle change
+                    checked={isAllTagsSelected} 
+                    onCheckedChange={toggleAllTags} 
                     className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-black"
                   />
                   <Label htmlFor="tag-all" className="text-sm cursor-pointer">
