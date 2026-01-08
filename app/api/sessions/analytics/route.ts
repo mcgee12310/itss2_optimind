@@ -167,14 +167,16 @@ export async function GET(req: Request) {
       // Nhóm theo ngày (YYYY-MM-DD)
       const uniqueDays = Array.from(new Set(allSessionsForStreak.map(s => 
         new Date(s.startTime).toISOString().split('T')[0]
-      ))).sort().reverse();
+      ))) as string[];
+      uniqueDays.sort();
+      uniqueDays.reverse();
 
-      const lastStudyDate = new Date(uniqueDays[0]);
+      const lastStudyDate = new Date(uniqueDays[0] as string);
       // Nếu ngày học cuối là hôm nay hoặc hôm qua thì mới tính streak
       if (getDayDiff(today, lastStudyDate) <= 1) {
         currentStreak = 1;
         for (let i = 0; i < uniqueDays.length - 1; i++) {
-          if (getDayDiff(new Date(uniqueDays[i]), new Date(uniqueDays[i+1])) === 1) {
+          if (getDayDiff(new Date(uniqueDays[i] as string), new Date(uniqueDays[i+1] as string)) === 1) {
             currentStreak++;
           } else {
             break;
@@ -188,16 +190,16 @@ export async function GET(req: Request) {
 
     if (period === "day") {
       // Hiển thị theo phiên học trong ngày (mỗi điểm là một session)
-      chartData = sessions.map((s) => ({
-        date: new Date(s.startTime).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
+      chartData = sessions.map((s: any) => ({
+        date: new Date(s.startTime as string | number | Date).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }),
         minutes: Math.round(((s.duration || 0) / 60)),
         focus: Math.round(s.focusScore || 0),
       }));
     } else {
       // Gộp theo ngày cho tuần/tháng
       const chartMap = new Map<string, { date: string; duration: number; focus: number; count: number }>();
-      sessions.forEach((s) => {
-        const dateStr = new Date(s.startTime).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
+      sessions.forEach((s: any) => {
+        const dateStr = new Date(s.startTime as string | number | Date).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
         if (!chartMap.has(dateStr)) {
           chartMap.set(dateStr, { date: dateStr, duration: 0, focus: 0, count: 0 });
         }
