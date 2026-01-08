@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, FC } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import VideoEngagementAnalyzer from "@/hooks/use-engagement-analyzer";
 import {
 	Accordion,
 	AccordionContent,
@@ -83,7 +84,7 @@ export default function LandingPage() {
 	// --- State cho Demo ---
 	const [timeLeft, setTimeLeft] = useState<number>(5 * 60); // 5 phút
 	const [isDemoRunning, setDemoRunning] = useState<boolean>(false);
-	const [demoFocus, setDemoFocus] = useState<number>(0); // Điểm tập trung giả
+	const [demoFocus, setDemoFocus] = useState<number>(0); // Điểm tập trung thật từ AI
 
 	// --- State cho hiệu ứng Header & Auth ---
 	const [isScrolled, setIsScrolled] = useState<boolean>(false);
@@ -124,20 +125,20 @@ export default function LandingPage() {
 			return;
 		}
 		let timerInterval: NodeJS.Timeout | null = null;
-		let focusInterval: NodeJS.Timeout | null = null;
 		if (isDemoRunning && timeLeft > 0) {
 			timerInterval = setInterval(() => {
 				setTimeLeft((prev) => prev - 1);
 			}, 1000);
-			focusInterval = setInterval(() => {
-				setDemoFocus(Math.floor(Math.random() * 21) + 80); // Giả lập 80-100%
-			}, 2000);
 		}
 		return () => {
 			if (timerInterval) clearInterval(timerInterval);
-			if (focusInterval) clearInterval(focusInterval);
 		};
 	}, [isDemoRunning, timeLeft]);
+
+	// --- Callback nhận điểm tập trung thật từ AI ---
+	const handleFocusScoreUpdate = (score: number) => {
+		setDemoFocus(score);
+	};
 
 	const handleDemoToggle = (): void => {
 		if (timeLeft === 0) setTimeLeft(5 * 60); // Reset nếu hết giờ
@@ -530,16 +531,54 @@ export default function LandingPage() {
 								</div>
 							</div>
 
-							{/* Cột 2: Camera (BÊN PHẢI) */}
-							<div className="flex-1">
-								<div className="w-full aspect-video bg-gray-800 text-white rounded-lg flex flex-col items-center justify-center">
-									<Camera className="h-16 w-16 text-gray-500" />
-									<p className="text-gray-300">
-										Bật camera để theo dõi
-									</p>
-									<p className="text-sm text-gray-400">
-										(Đang chờ:{" "}
-										{isDemoRunning ? "ON" : "OFF"})
+							{/* Cột 2: Camera với AI thật (BÊN PHẢI) */}
+							<div className="flex-1 flex flex-col gap-4">
+								<div className="relative w-full aspect-video bg-gray-800 rounded-lg overflow-hidden shadow-lg flex items-center justify-center">
+									{/* VideoEngagementAnalyzer với AI thật */}
+									<VideoEngagementAnalyzer
+										onScoreUpdate={handleFocusScoreUpdate}
+										isActive={isDemoRunning}
+									/>
+									{/* Badge trạng thái */}
+									<div
+										className={cn(
+											"absolute top-4 right-4 px-3 py-1 rounded-full text-sm font-medium z-10 shadow-lg",
+											isDemoRunning
+												? demoFocus >= 65
+													? "bg-green-500 text-white"
+													: "bg-red-500 text-white"
+												: "bg-gray-600 text-white"
+										)}
+									>
+										{isDemoRunning
+											? demoFocus >= 65
+												? "🎯 Đang tập trung"
+												: "⚠️ Mất tập trung"
+											: "📷 Sẵn sàng"}
+									</div>
+								</div>
+								{/* Thông tin AI */}
+								<div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+									<div className="flex items-center gap-2 mb-2">
+										<Brain className="w-5 h-5 text-blue-600" />
+										<span className="font-semibold text-blue-800">AI Focus Score</span>
+									</div>
+									<div className="text-3xl font-bold text-blue-700 mb-2">
+										{Math.round(demoFocus)}/100
+									</div>
+									<div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+										<div
+											className={cn(
+												"h-full transition-all duration-500 ease-out",
+												demoFocus >= 65
+													? "bg-green-500"
+													: "bg-red-500"
+											)}
+											style={{ width: `${demoFocus}%` }}
+										/>
+									</div>
+									<p className="text-xs text-gray-600 mt-2">
+										{isDemoRunning ? "✨ AI đang phân tích..." : "▶️ Nhấn Play để bắt đầu"}
 									</p>
 								</div>
 							</div>
@@ -547,7 +586,6 @@ export default function LandingPage() {
 					</div>
 				</div>
 			</section>
-
 			{/* === PHẦN 4: TÍNH NĂNG (Trước là 3) === */}
 			<section className="h-auto w-screen flex flex-col items-center justify-center p-8 py-24 bg-white">
 				<h2 className="text-5xl font-bold mb-16 text-center text-blue-800">

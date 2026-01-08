@@ -1,7 +1,7 @@
 // Tên file: app/components/PomodoroTimer.tsx
 "use client";
 
-import { useState, useEffect, FC, useRef } from "react";
+import { useState, useEffect, FC, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -82,70 +82,84 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 	// Ref cho âm thanh
 	const audioRef = useRef<HTMLAudioElement>(null);
+	const workerRef = useRef<Worker | null>(null);
+	const startTimeRef = useRef<number>(0); // Lưu thời gian bắt đầu timer
+	const initialTimeRef = useRef<number>(0); // Lưu thời gian ban đầu khi start
 
-	// --- Effect chính cho Timer (chống drift bằng delta thời gian) ---
+	// === Initialize Timer với RAF (không dùng Web Worker vì Next.js không support tốt) ===
 	useEffect(() => {
-		let interval: NodeJS.Timeout | null = null;
-		let lastTick = performance.now();
-		let carryMs = 0;
-		let tickCount = 0;
+		let rafId: number | null = null;
 
-		if (isRunning && timer > 0) {
-			interval = setInterval(() => {
-				const now = performance.now();
-				carryMs += now - lastTick;
-				lastTick = now;
-
-				const steps = Math.floor(carryMs / 1000);
-				if (steps > 0) {
-					carryMs -= steps * 1000;
-					setTimer((prev) => Math.max(prev - steps, 0));
-					tickCount += steps;
-					if (tickCount % 10 === 0) {
-						console.log(`[Timer] ${tickCount} seconds elapsed, ${steps} steps, carryMs: ${carryMs}`);
-					}
-				}
-			}, 250); // kiểm tra 4 lần mỗi giây để bắt kịp trễ
-		}
-
-		if (!isRunning && timer === 0) {
-			setIsRunning(false);
-			audioRef.current?.play();
-
-			if (timerMode === "pomodoro") {
-				if (currentMode === "focus") {
-					const newCompleted = completedCycles + 1;
-					if (newCompleted >= configCycles) {
-						setCurrentMode("longBreak");
-						setTimer(configLongBreakTime * 60);
-						setCompletedCycles(0);
-					} else {
-						setCurrentMode("break");
-						setTimer(configBreakTime * 60);
-						setCompletedCycles(newCompleted);
-					}
-				} else {
-					setCurrentMode("focus");
-					setTimer(configFocusTime * 60);
-				}
+		const tick = () => {
+			// Tính elapsed time từ lúc bắt đầu (tuyệt đối, không phụ thuộc RAF pause)
+			if (startTimeRef.current === 0) {
+				startTimeRef.current = Date.now();
+				initialTimeRef.current = timer;
 			}
+
+			const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+			const newTimer = Math.max(0, initialTimeRef.current - elapsed);
+
+			setTimer(newTimer);
+
+			// Nếu timer kết thúc
+			if (newTimer === 0) {
+				setIsRunning(false);
+				audioRef.current?.play();
+				startTimeRef.current = 0;
+				initialTimeRef.current = 0;
+
+				if (timerMode === "pomodoro") {
+					if (currentMode === "focus") {
+						const newCompleted = completedCycles + 1;
+						if (newCompleted >= configCycles) {
+							setCurrentMode("longBreak");
+							setTimer(configLongBreakTime * 60);
+						} else {
+							setCompletedCycles(newCompleted);
+							setCurrentMode("break");
+							setTimer(configBreakTime * 60);
+						}
+					} else {
+						setCurrentMode("focus");
+						setTimer(configFocusTime * 60);
+					}
+				}
+			} else if (isRunning) {
+				rafId = requestAnimationFrame(tick);
+			}
+		};
+
+		if (isRunning) {
+			rafId = requestAnimationFrame(tick);
+		} else {
+			// Reset refs khi dừng
+			startTimeRef.current = 0;
+			initialTimeRef.current = 0;
 		}
 
 		return () => {
-			if (interval) clearInterval(interval);
+			if (rafId) cancelAnimationFrame(rafId);
 		};
-	}, [
-		isRunning,
-		timer,
-		currentMode,
-		completedCycles,
-		configFocusTime,
-		configBreakTime,
-		configLongBreakTime,
-		configCycles,
-		timerMode,
-		setIsRunning,
-	]);
+	}, [isRunning, timerMode, currentMode, completedCycles, configFocusTime, configBreakTime, configLongBreakTime, configCycles]);
+
+	// Sync config khi thay đổi (nhưng không khi running)
+	useEffect(() => {
+		if (!isRunning) {
+			// Reset timer khi config thay đổi
+			setCurrentMode("focus");
+			setCompletedCycles(0);
+			if (timerMode === "pomodoro") {
+				setTimer(configFocusTime * 60);
+			} else {
+				setTimer(configCountdownTime * 60);
+			}
+		}
+	}, [configFocusTime, configBreakTime, configLongBreakTime, configCycles, configCountdownTime, timerMode, isRunning]);
+
+	// --- Old Timer Effect (Replaced by Web Worker) ---
+	// Removed: setInterval-based timer is now handled by timer.worker.ts
+	// The Web Worker runs on a separate thread, so it won't be blocked by main thread activities
 
 	// --- Handlers ---
 	const resetTimer = (): void => {

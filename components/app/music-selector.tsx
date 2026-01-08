@@ -66,17 +66,7 @@ interface MusicPlayerProps {
 	filterType?: "MP3" | "YouTube";
 }
 
-<<<<<<< HEAD
-const MusicPlayer: FC<MusicPlayerProps> = () => {
-	// Hydration fix
-	const [isClient, setIsClient] = useState(false);
-	useEffect(() => {
-		setIsClient(true);
-	}, []);
-
-=======
 const MusicPlayer: FC<MusicPlayerProps> = ({ filterType }) => {
->>>>>>> origin/Fix/gamification/VinhLT
 	// Lấy state và handlers từ Context
 	const {
 		tracks,
@@ -95,6 +85,7 @@ const MusicPlayer: FC<MusicPlayerProps> = ({ filterType }) => {
 	} = useMusicContext();
 
 	// States cục bộ
+	const [isClient, setIsClient] = useState(false);
 	const [customUrlInput, setCustomUrlInput] = useState("");
 	const [customTrackName, setCustomTrackName] = useState("");
 	const [isRenameOpen, setIsRenameOpen] = useState(false);
@@ -199,6 +190,11 @@ const MusicPlayer: FC<MusicPlayerProps> = ({ filterType }) => {
 		}
 	}, [isPlaying, volume, currentTrack.url]);
 
+	// Hydration mismatch fix: Set isClient sau khi component mount
+	useEffect(() => {
+		setIsClient(true);
+	}, []);
+
 	// Tránh hydration mismatch - chỉ render sau khi client load
 	if (!isClient) {
 		return null;
@@ -217,13 +213,9 @@ const MusicPlayer: FC<MusicPlayerProps> = ({ filterType }) => {
 		>
 			{/* Header và nút đóng */}
 			<div className="flex justify-between items-center pb-3 border-b border-white/20">
-<<<<<<< HEAD
-				<h3 className="text-lg font-semibold text-white">Nhạc nền</h3>
-=======
 				<h3 className="text-lg font-semibold">
 					{filterType === "MP3" ? "Nhạc nền" : "Âm thanh"}
 				</h3>
->>>>>>> origin/Fix/gamification/VinhLT
 				<Button
 					variant="ghost"
 					size="icon"

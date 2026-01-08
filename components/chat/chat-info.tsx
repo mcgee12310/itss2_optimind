@@ -132,7 +132,7 @@ const ChatInfoPanel: FC<ChatInfoPanelProps> = ({
 						<Avatar className="h-24 w-24 mb-4">
 							<AvatarImage src={chat.avatar} />
 							<AvatarFallback className="text-4xl">
-								{chat.name[0]}
+								{chat.name?.[0] || 'C'}
 							</AvatarFallback>
 						</Avatar>
 
@@ -255,8 +255,7 @@ const ChatInfoPanel: FC<ChatInfoPanelProps> = ({
 																		/>
 																		<AvatarFallback>
 																			{
-																				user
-																					.name[0]
+																				user.name?.[0] || 'U'
 																			}
 																		</AvatarFallback>
 																	</Avatar>
@@ -331,7 +330,7 @@ const ChatInfoPanel: FC<ChatInfoPanelProps> = ({
 													src={member.avatar}
 												/>
 												<AvatarFallback>
-													{member.name[0]}
+													{member.name?.[0] || 'M'}
 												</AvatarFallback>
 											</Avatar>
 											<span className="font-medium">
@@ -390,3 +389,4 @@ const ChatInfoPanel: FC<ChatInfoPanelProps> = ({
 };
 
 export default ChatInfoPanel;
+

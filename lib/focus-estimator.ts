@@ -37,23 +37,31 @@ interface CalibrationData {
 
 export class FocusEstimator {
   // Weights (tổng = 100%)
-  private readonly WEIGHT_HEAD_POSE = 0.4;
-  private readonly WEIGHT_EYE_GAZE = 0.3;
-  private readonly WEIGHT_EAR = 0.2;
-  private readonly WEIGHT_STABILITY = 0.1;
+  private readonly WEIGHT_HEAD_POSE = 0.28;
+  private readonly WEIGHT_EYE_GAZE = 0.32;
+  private readonly WEIGHT_EAR = 0.25;
+  private readonly WEIGHT_STABILITY = 0.15;
 
   // Thresholds
-  private readonly HEAD_POSE_SAFE_ZONE_DEG = 8; // Giảm từ 15 -> 8 (nghiêm ngặt hơn)
-  private readonly HEAD_POSE_MAX_PENALTY_DEG = 30; // Giảm từ 45 -> 30
-  private readonly GAZE_SAFE_ZONE = 0.08; // Giảm từ 0.15 -> 0.08
-  private readonly GAZE_MAX_PENALTY = 0.3; // Giảm từ 0.5 -> 0.3
-  private readonly EAR_THRESHOLD = 0.25; // Tăng từ 0.2 -> 0.25 (nhạy hơn)
-  private readonly EAR_SLEEP_DURATION_MS = 500; // Giảm từ 1000 -> 500ms (phát hiện buồn ngủ sớm hơn)
-  private readonly STABILITY_THRESHOLD = 0.01; // Giảm từ 0.02 -> 0.01 (yêu cầu ổn định hơn)
+  private readonly HEAD_POSE_SAFE_ZONE_DEG = 6; // Nghiêm ngặt hơn: lệch > 6° bắt đầu phạt
+  private readonly HEAD_POSE_MAX_PENALTY_DEG = 25; // Tăng nhanh hơn đến mức phạt tối đa
+  private readonly GAZE_SAFE_ZONE = 0.06; // Nhạy hơn với liếc mắt
+  private readonly GAZE_MAX_PENALTY = 0.25; // Giới hạn phạt tối đa sớm hơn
+  private readonly EAR_THRESHOLD = 0.28; // Khắt khe hơn: dễ coi là mắt nửa nhắm
+  private readonly EAR_SLEEP_DURATION_MS = 350; // Phát hiện mắt nhắm kéo dài sớm hơn
+  private readonly STABILITY_THRESHOLD = 0.008; // Khắt khe hơn với cử động nhỏ
 
   // Smoothing
   private readonly EMA_ALPHA = 0.3; // Hệ số EMA (0-1), càng thấp càng mượt
   private smoothedScore = 100;
+  
+  // Cho phép hạ độ mượt khi cần (runtime)
+  public setSmoothing(alpha: number) {
+    if (alpha > 0 && alpha < 1) {
+      // @ts-ignore - override readonly at runtime intentionally
+      this.EMA_ALPHA = alpha;
+    }
+  }
 
   // Calibration
   private calibrationData: CalibrationData | null = null;
@@ -195,8 +203,16 @@ export class FocusEstimator {
     ]);
 
     // Tâm mống mắt
-    const leftIris = landmarks[this.LEFT_IRIS_CENTER];
-    const rightIris = landmarks[this.RIGHT_IRIS_CENTER];
+    let leftIris: Landmark | null = null;
+    let rightIris: Landmark | null = null;
+    // MediaPipe có 2 biến thể: 468 hoặc 478 landmarks (có iris). Nếu thiếu iris, dùng tâm hốc mắt làm fallback.
+    if (landmarks.length >= this.RIGHT_IRIS_CENTER + 1) {
+      leftIris = landmarks[this.LEFT_IRIS_CENTER];
+      rightIris = landmarks[this.RIGHT_IRIS_CENTER];
+    } else {
+      leftIris = leftEyeCenter;
+      rightIris = rightEyeCenter;
+    }
 
     // Tính vector offset (normalized by eye width)
     const leftEyeWidth = this.distance(
@@ -275,6 +291,11 @@ export class FocusEstimator {
     this.nosePositionHistory = this.nosePositionHistory.filter(
       (entry) => now - entry.timestamp < this.STABILITY_WINDOW_MS
     );
+
+    // Giới hạn size tối đa để tránh memory leak
+    if (this.nosePositionHistory.length > 120) {
+      this.nosePositionHistory = this.nosePositionHistory.slice(-60);
+    }
 
     // Tính độ lệch chuẩn
     if (this.nosePositionHistory.length < 2) return 0;
@@ -384,7 +405,7 @@ export class FocusEstimator {
     if (deltaYaw > this.HEAD_POSE_SAFE_ZONE_DEG) {
       const excessYaw = deltaYaw - this.HEAD_POSE_SAFE_ZONE_DEG;
       const normalizedYaw = excessYaw / (this.HEAD_POSE_MAX_PENALTY_DEG - this.HEAD_POSE_SAFE_ZONE_DEG);
-      yawPenalty = Math.min(1.0, Math.pow(normalizedYaw, 2.0)); // Tăng từ 1.5 -> 2.0 (penalty tăng nhanh hơn)
+      yawPenalty = Math.min(1.0, Math.pow(normalizedYaw, 2.3)); // Khắt khe hơn
     }
 
     // Tính penalty cho Pitch
@@ -392,7 +413,7 @@ export class FocusEstimator {
     if (deltaPitch > this.HEAD_POSE_SAFE_ZONE_DEG) {
       const excessPitch = deltaPitch - this.HEAD_POSE_SAFE_ZONE_DEG;
       const normalizedPitch = excessPitch / (this.HEAD_POSE_MAX_PENALTY_DEG - this.HEAD_POSE_SAFE_ZONE_DEG);
-      pitchPenalty = Math.min(1.0, Math.pow(normalizedPitch, 2.0)); // Tăng từ 1.5 -> 2.0
+      pitchPenalty = Math.min(1.0, Math.pow(normalizedPitch, 2.3)); // Khắt khe hơn
     }
 
     // Trả về penalty cao nhất giữa Yaw và Pitch
@@ -422,7 +443,7 @@ export class FocusEstimator {
 
     const excessOffset = maxOffset - this.GAZE_SAFE_ZONE;
     const normalizedOffset = excessOffset / (this.GAZE_MAX_PENALTY - this.GAZE_SAFE_ZONE);
-    return Math.min(1.0, Math.pow(normalizedOffset, 1.5)); // Thêm hàm mũ để penalty tăng nhanh hơn
+    return Math.min(1.0, Math.pow(normalizedOffset, 2.0)); // Tăng độ gắt với liếc mắt
   }
 
   /**
@@ -450,7 +471,7 @@ export class FocusEstimator {
       
       // Nếu mắt gần như nhắm hoàn toàn (EAR < 0.2), penalty gấp đôi
       if (avgEAR < 0.2) {
-        basePenalty = Math.min(1.0, basePenalty * 1.5);
+        basePenalty = Math.min(1.0, basePenalty * 1.7);
       }
       
       return basePenalty;
@@ -471,8 +492,8 @@ export class FocusEstimator {
     if (stability < this.STABILITY_THRESHOLD) return 0;
 
     const excessStability = stability - this.STABILITY_THRESHOLD;
-    const normalizedStability = excessStability / (0.05 - this.STABILITY_THRESHOLD); // Giảm từ 0.1 -> 0.05
-    return Math.min(1.0, Math.pow(normalizedStability, 1.5)); // Thêm hàm mũ để penalty tăng nhanh hơn
+    const normalizedStability = excessStability / (0.04 - this.STABILITY_THRESHOLD); // Nhạy hơn với ngọ nguậy
+    return Math.min(1.0, Math.pow(normalizedStability, 2.0)); // Tăng độ gắt với cử động
   }
 
   // =====================================================================
@@ -501,9 +522,9 @@ export class FocusEstimator {
    * @returns Điểm tập trung (0-100, đã smooth)
    */
   public estimate(landmarks: Landmark[]): number {
-    if (!landmarks || landmarks.length < 478) {
-      console.warn("[FocusEstimator] Invalid landmarks (expected 478)");
-      return this.smoothedScore; // Trả về điểm cũ nếu input không hợp lệ
+    if (!landmarks || landmarks.length < 468) {
+      console.warn("[FocusEstimator] Invalid landmarks (expected >= 468)");
+      return (this.smoothedScore - 50)*2; // Trả về điểm cũ nếu input không hợp lệ
     }
 
     // 1. Trích xuất metrics
@@ -520,14 +541,17 @@ export class FocusEstimator {
     // 3. Làm mượt
     const smoothedScore = this.smoothScore(rawScore);
 
-    return Math.round(smoothedScore);
+    // 4. Scale: 50 -> 0, 100 -> 100
+    const scaledScore = Math.max(0, (smoothedScore - 50)*2);
+
+    return Math.round(scaledScore);
   }
 
   /**
    * Lấy metrics chi tiết (dùng cho debug/visualization)
    */
   public getMetrics(landmarks: Landmark[]): Metrics | null {
-    if (!landmarks || landmarks.length < 478) return null;
+    if (!landmarks || landmarks.length < 468) return null;
 
     return {
       headPose: this.calculateHeadPose(landmarks),

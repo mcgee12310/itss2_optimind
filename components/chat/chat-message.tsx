@@ -89,7 +89,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
 							<Avatar>
 								<AvatarImage src={selectedChat.avatar} />
 								<AvatarFallback>
-									{selectedChat.name[0]}
+									{selectedChat.name?.[0] || 'C'}
 								</AvatarFallback>
 							</Avatar>
 							<h3 className="text-lg font-bold">
@@ -135,7 +135,7 @@ const ChatWindow: FC<ChatWindowProps> = ({
 													src={sender?.avatar}
 												/>
 												<AvatarFallback>
-													{sender?.name[0]}
+													{sender?.name?.[0] || 'U'}
 												</AvatarFallback>
 											</Avatar>
 										)}

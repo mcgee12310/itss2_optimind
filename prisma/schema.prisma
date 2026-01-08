@@ -14,6 +14,7 @@ model User {
   passwordHash String
   avatar       String?
   avatarUrl    String?
+  bio          String?
   coins        Int      @default(0)
   level        Int      @default(1)
   exp          Int      @default(0)

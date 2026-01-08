@@ -55,3 +55,41 @@ export async function GET(req: Request) {
     return NextResponse.json({ user: null }, { status: 401 });
   }
 }
+
+export async function PATCH(req: Request) {
+  const cookieHeader = req.headers.get("cookie") || "";
+  const userCookie = cookieHeader
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith("user_data="));
+
+  if (!userCookie) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    const value = decodeURIComponent(userCookie.split("=")[1]);
+    const userData = JSON.parse(value);
+
+    const body = await req.json();
+    const { name, bio, avatar } = body;
+
+    // Update user profile
+    const updatedUser = await prisma.user.update({
+      where: { id: userData.id },
+      data: {
+        ...(name && { name }),
+        ...(avatar && { avatar }),
+        ...(bio !== undefined && { bio }),
+      },
+    });
+
+    return NextResponse.json({ user: updatedUser });
+  } catch (error) {
+    console.error("Failed to update profile:", error);
+    return NextResponse.json(
+      { error: "Failed to update profile" },
+      { status: 500 }
+    );
+  }
+}

@@ -168,12 +168,12 @@ const ControlToolbar: FC<ControlToolbarProps> = ({
 		<TooltipProvider>
 			<div
 				className={cn(
-					"absolute bottom-4 right-4 flex flex-row gap-3 p-3 z-30",
+					"absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 p-3 z-30",
 					glassEffect,
 					"transition-all duration-300 ease-in-out",
 					isUiVisible
-						? "opacity-100 translate-y-0"
-						: "opacity-0 translate-y-full"
+						? "opacity-100 translate-x-0"
+						: "opacity-0 translate-x-full"
 				)}
 			>
 				{/* Dùng .map() để render các nút */}
