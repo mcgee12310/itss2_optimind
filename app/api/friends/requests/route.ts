@@ -49,10 +49,10 @@ export async function GET(req: Request) {
         id: string;
         user1: {
           id: string;
-          name?: string;
-          username?: string;
-          avatar?: string;
-          avatarUrl?: string;
+          name: string | null;
+          username: string | null;
+          avatar: string | null;
+          avatarUrl: string | null;
         };
         createdAt: Date;
       }) => ({
@@ -81,55 +81,99 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { requestId, action } = body; // action: "accept" or "decline"
-
-    if (!requestId || !action) {
-      return NextResponse.json(
-        { error: "requestId and action are required" },
-        { status: 400 }
-      );
-    }
-
-    // Find the friend request
-    const friendship = await prisma.friendship.findUnique({
-      where: { id: requestId },
-    });
-
-    if (!friendship) {
-      return NextResponse.json({ error: "Friend request not found" }, { status: 404 });
-    }
-
-    // Verify this request is for current user
-    if (friendship.user2Id !== userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
-
-    if (action === "accept") {
-      // Accept friend request
-      const updated = await prisma.friendship.update({
-        where: { id: requestId },
-        data: {
-          status: "accepted",
-          acceptedAt: new Date(),
+    // Gửi lời mời kết bạn nếu có friendId
+    if (body.friendId && !body.requestId && !body.action) {
+      const { friendId } = body;
+      if (userId === friendId) {
+        return NextResponse.json({ error: "Cannot send friend request to yourself" }, { status: 400 });
+      }
+      // Check if friendship already exists
+      const existingFriendship = await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { user1Id: userId, user2Id: friendId },
+            { user1Id: friendId, user2Id: userId },
+          ],
         },
       });
-
-      return NextResponse.json({
-        message: "Friend request accepted",
-        friendship: updated,
+      if (existingFriendship) {
+        return NextResponse.json(
+          { error: "Friendship already exists or pending" },
+          { status: 400 }
+        );
+      }
+      // Create friend request
+      const friendship = await prisma.friendship.create({
+        data: {
+          user1Id: userId,
+          user2Id: friendId,
+          status: "pending",
+        },
+        include: {
+          user2: {
+            select: {
+              id: true,
+              name: true,
+              username: true,
+              avatar: true,
+              avatarUrl: true,
+            },
+          },
+        },
       });
-    } else if (action === "decline") {
-      // Decline and delete friend request
-      await prisma.friendship.delete({
+      return NextResponse.json({
+        id: friendship.id,
+        status: friendship.status,
+        friend: {
+          id: friendship.user2.id,
+          name: friendship.user2.name || friendship.user2.username || "User",
+          avatar: friendship.user2.avatar || friendship.user2.avatarUrl || "https://github.com/shadcn.png",
+        },
+      });
+    }
+
+    // Xử lý accept/decline nếu có requestId và action
+    if (body.requestId && body.action) {
+      const { requestId, action } = body;
+      // Find the friend request
+      const friendship = await prisma.friendship.findUnique({
         where: { id: requestId },
       });
-
-      return NextResponse.json({
-        message: "Friend request declined",
-      });
-    } else {
-      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+      if (!friendship) {
+        return NextResponse.json({ error: "Friend request not found" }, { status: 404 });
+      }
+      // Verify this request is for current user
+      if (friendship.user2Id !== userId) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
+      }
+      if (action === "accept") {
+        // Accept friend request
+        const updated = await prisma.friendship.update({
+          where: { id: requestId },
+          data: {
+            status: "accepted",
+            acceptedAt: new Date(),
+          },
+        });
+        return NextResponse.json({
+          message: "Friend request accepted",
+          friendship: updated,
+        });
+      } else if (action === "decline") {
+        // Decline and delete friend request
+        await prisma.friendship.delete({
+          where: { id: requestId },
+        });
+        return NextResponse.json({
+          message: "Friend request declined",
+        });
+      } else {
+        return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+      }
     }
+
+    // Nếu không đúng định dạng body
+    return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
   } catch (e) {
     console.error("Error processing friend request:", e);
     return NextResponse.json({ error: "Failed to process friend request" }, { status: 500 });

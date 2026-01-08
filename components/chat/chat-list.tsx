@@ -132,7 +132,7 @@ const ContactSidebar: FC<ContactSidebarProps> = ({
 	// Send friend request
 	const handleSendFriendRequest = async (userId: string) => {
 		try {
-			const res = await fetch("/api/friends/request", {
+			const res = await fetch("/api/friends/requests", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ friendId: userId }),
