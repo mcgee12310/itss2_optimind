@@ -10,6 +10,7 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import Loader from "./loader";
 import { VideoParticipant } from "./video-participant";
+import type { Participant } from "@stream-io/video-client/dist/src/gen/video/sfu/models/models";
 import { 
   Mic, MicOff, Video, VideoOff, Phone, 
   Users, X, Clock, Shield, Copy, Check

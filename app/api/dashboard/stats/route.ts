@@ -67,7 +67,7 @@ export async function GET(req: Request) {
             new Date(s.startTime).toISOString().split("T")[0]
           )
         )
-      ).sort((a, b) => b.localeCompare(a)); // Sắp xếp giảm dần
+      ).sort((a: string, b: string) => b.localeCompare(a)); // Sắp xếp giảm dần
 
       const lastStudyDate = new Date(uniqueDays[0]);
       // Nếu ngày học cuối là hôm nay hoặc hôm qua thì mới tính streak
