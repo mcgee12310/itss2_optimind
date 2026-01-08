@@ -167,7 +167,9 @@ export async function GET(req: Request) {
       // Nhóm theo ngày (YYYY-MM-DD)
       const uniqueDays = Array.from(new Set(allSessionsForStreak.map(s => 
         new Date(s.startTime).toISOString().split('T')[0]
-      ))).sort().reverse();
+      ))) as string[];
+      uniqueDays.sort();
+      uniqueDays.reverse();
 
       const lastStudyDate = new Date(uniqueDays[0]);
       // Nếu ngày học cuối là hôm nay hoặc hôm qua thì mới tính streak
