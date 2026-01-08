@@ -84,7 +84,7 @@ export default function GamificationPage() {
       }
 
       // Fetch current user coins
-      const userRes = await fetch("/api/auth/me");
+      const userRes = await fetch("/api/me");
       if (userRes.ok) {
         const userData = await userRes.json();
         setUserCoins(userData.user.coins);

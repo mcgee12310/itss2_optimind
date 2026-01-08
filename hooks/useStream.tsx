@@ -36,7 +36,7 @@ export default function StreamVideoProvider({
         }
 
         // Get token from API endpoint
-        const tokenResponse = await fetch("/api/auth/token", {
+        const tokenResponse = await fetch("/api/token", {
           method: "GET",
           credentials: "include",
         });

@@ -64,7 +64,7 @@ export default function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      const res = await fetch("/api/auth/me");
+      const res = await fetch("/api/me");
       if (res.ok) {
         const data = await res.json();
         setProfile(data.user);
@@ -105,9 +105,9 @@ export default function ProfilePage() {
     
     try {
       setSaving(true);
-      // Note: You may need to create a /api/auth/profile PATCH endpoint
+      // Note: You may need to create a /api/profile PATCH endpoint
       // For now, this is a placeholder
-      const res = await fetch("/api/auth/me", {
+      const res = await fetch("/api/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

@@ -14,7 +14,7 @@ export const tokenProvider = async (): Promise<string> => {
 		}
 
 		const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-		const response = await fetch(`${baseUrl}/api/auth/token`, {
+		const response = await fetch(`${baseUrl}/token`, {
 			method: "GET",
 			headers: {
 				"Content-Type": "application/json",

@@ -2,7 +2,7 @@ import { LoginCredentials, SignupCredentials, AuthResponse, User } from "./types
 
 export async function clientLogin(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
-    const res = await fetch("/api/auth/login", {
+    const res = await fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
@@ -17,7 +17,7 @@ export async function clientLogin(credentials: LoginCredentials): Promise<AuthRe
 
 export async function clientSignup(credentials: SignupCredentials): Promise<AuthResponse> {
   try {
-    const res = await fetch("/api/auth/signup", {
+    const res = await fetch("/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
@@ -32,7 +32,7 @@ export async function clientSignup(credentials: SignupCredentials): Promise<Auth
 
 export async function clientLogout(): Promise<void> {
   try {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/logout", { method: "POST" });
   } catch {
     // ignore
   }
@@ -40,7 +40,7 @@ export async function clientLogout(): Promise<void> {
 
 export async function clientGetCurrentUser(): Promise<User | null> {
   try {
-    const res = await fetch("/api/auth/me");
+    const res = await fetch("/api/me");
     if (!res.ok) return null;
     const data = await res.json();
     return data?.user ?? null;

@@ -18,7 +18,7 @@ export async function getCurrentUser(): Promise<User | null> {
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/auth/login`, {
+    const res = await fetch(`${baseUrl}/api/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
@@ -34,7 +34,7 @@ export async function login(credentials: LoginCredentials): Promise<AuthResponse
 export async function signup(credentials: SignupCredentials): Promise<AuthResponse> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/auth/signup`, {
+    const res = await fetch(`${baseUrl}/api/signup`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
@@ -50,7 +50,7 @@ export async function signup(credentials: SignupCredentials): Promise<AuthRespon
 export async function logout(): Promise<void> {
   try {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-    await fetch(`${baseUrl}/api/auth/logout`, { method: "POST" });
+    await fetch(`${baseUrl}/api/logout`, { method: "POST" });
   } catch {}
 }
 
