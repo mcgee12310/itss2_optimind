@@ -46,7 +46,7 @@ export async function GET(req: Request) {
     });
 
     const totalMinutesToday = todaySessions.reduce(
-      (sum: number, s) => sum + (s.duration || 0) / 60,
+      (sum: number, s: { duration?: number | null }) => sum + (s.duration || 0) / 60,
       0
     );
     const studyHoursToday = Math.round(totalMinutesToday / 60 * 10) / 10; // Làm tròn 1 chữ số
