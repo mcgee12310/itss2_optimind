@@ -79,7 +79,7 @@ export async function DELETE(req: Request, context: any) {
     });
 
     return NextResponse.json({
-      members: updatedMembers.map((m) => ({
+      members: updatedMembers.map((m: any) => ({
         id: m.user.id,
         name: m.user.name || m.user.username || "User",
         avatar: m.user.avatar || m.user.avatarUrl || "https://github.com/shadcn.png",
