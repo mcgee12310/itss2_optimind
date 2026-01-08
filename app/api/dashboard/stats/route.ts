@@ -45,7 +45,7 @@ export async function GET(req: Request) {
       select: { duration: true },
     });
 
-    const totalMinutesToday = todaySessions.reduce(
+    const totalMinutesToday = todaySessions.reduce<number>(
       (sum, s) => sum + (s.duration || 0) / 60,
       0
     );
