@@ -1,12 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-export async function middleware(request: NextRequest) {
-	// Skip middleware for API routes
+export async function proxy(request: NextRequest) {
+	// Skip proxy for API routes
 	if (request.nextUrl.pathname.startsWith("/api")) {
 		return NextResponse.next();
 	}
 
-	// Read auth token directly from request cookies in middleware
+	// Read auth token directly from request cookies in proxy
 	const token = request.cookies.get("auth_token")?.value || null;
 	const isAuthPage = request.nextUrl.pathname.startsWith("/login") || 
 	                   request.nextUrl.pathname.startsWith("/register");
@@ -40,3 +40,4 @@ export const config = {
 		"/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
 	],
 };
+

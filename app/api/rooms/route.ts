@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/utils/auth-server";
 
 // GET /api/rooms - Get active rooms
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     });
 
    
-    const sanitizedRooms = rooms.map((room) => ({
+    const sanitizedRooms = rooms.map((room: any) => ({
       ...room,
       isPrivate: !!room.password && room.password.length > 0, 
       password: null, 

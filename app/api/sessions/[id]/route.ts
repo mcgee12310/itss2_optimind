@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 // Helper lấy User ID (tái sử dụng)
 function getUserIdFromCookie(req: Request): string | null {
@@ -45,7 +45,7 @@ export async function GET(
     let lowFocusCount = 0; // < 50
 
     // Tạo dữ liệu cho biểu đồ
-    const chartData = logs.map((log) => {
+    const chartData = logs.map((log: any) => {
       const score = log.score;
       if (score >= 80) highFocusCount++;
       else if (score >= 50) mediumFocusCount++;

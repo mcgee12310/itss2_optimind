@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 function hashPassword(password: string): string {
+  if (typeof password !== 'string') {
+    console.error('hashPassword expected string but received:', typeof password, password);
+    throw new TypeError('Password must be a string');
+  }
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 

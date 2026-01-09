@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 function getUserIdFromCookie(req: Request): string | null {
   const cookie = req.headers.get("cookie") || "";
@@ -59,7 +59,7 @@ export async function GET(req: Request, context: any) {
     });
 
     return NextResponse.json({
-      messages: messages.map((msg) => ({
+      messages: messages.map((msg: any) => ({
         id: msg.id,
         senderId: msg.userId,
         sender: {

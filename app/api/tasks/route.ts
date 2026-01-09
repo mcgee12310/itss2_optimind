@@ -108,7 +108,7 @@
 // }
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 function getUserIdFromCookie(req: Request): string | null {
   const cookie = req.headers.get("cookie") || "";

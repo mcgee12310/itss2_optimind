@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 function getUserIdFromCookie(req: Request): string | null {
   const cookie = req.headers.get("cookie") || "";
@@ -60,7 +60,7 @@ export async function POST(req: Request, context: any) {
         });
       } catch (e) {
         // Skip if member already exists
-        console.log(`Member ${memberId} already in room`);
+        // console.log(`Member ${memberId} already in room`);
       }
     }
 
@@ -81,7 +81,7 @@ export async function POST(req: Request, context: any) {
     });
 
     return NextResponse.json({
-      members: updatedMembers.map((m) => ({
+      members: updatedMembers.map((m: any) => ({
         id: m.user.id,
         name: m.user.name || m.user.username || "User",
         avatar: m.user.avatar || m.user.avatarUrl || "https://github.com/shadcn.png",

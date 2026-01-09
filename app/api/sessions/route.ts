@@ -86,7 +86,7 @@
 // }
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 // Helper lấy userId từ cookie
 function getUserIdFromCookie(req: Request): string | null {

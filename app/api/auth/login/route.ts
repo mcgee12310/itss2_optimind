@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
 function hashPassword(password: string): string {
+  if (typeof password !== 'string') {
+    console.error('hashPassword expected string but received:', typeof password, password);
+    throw new TypeError('Password must be a string');
+  }
   return crypto.createHash("sha256").update(password).digest("hex");
 }
 
@@ -15,8 +19,16 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { email, password } = body || {};
 
+    // console.log('Login body:', body);
+
     if (!email || !password) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    }
+
+    // Validate input types to avoid passing objects into crypto APIs
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      console.error('Invalid input types for login:', { emailType: typeof email, passwordType: typeof password });
+      return NextResponse.json({ error: "Email and password must be strings" }, { status: 400 });
     }
 
     // Find user in database
@@ -34,9 +46,6 @@ export async function POST(req: Request) {
     } else {
       // Verify password
       const hashedPassword = hashPassword(password);
-      console.log('Input password:', password);
-      console.log('Hashed password:', hashedPassword);
-      console.log('Stored hash:', user.passwordHash);
       if (user.passwordHash !== hashedPassword) {
         return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
       }
@@ -67,7 +76,7 @@ export async function POST(req: Request) {
       maxAge: 60 * 60 * 24 * 7,
       path: "/",
     });
-    res.cookies.set("user_data", JSON.stringify(userData), {
+    res.cookies.set("user_data", String(JSON.stringify(userData)), {
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
