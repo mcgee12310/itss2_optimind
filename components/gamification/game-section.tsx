@@ -20,8 +20,8 @@ export function GameSection({ gamePlays, cardStyle = "", onNavigateToShop }: Gam
                     <h2 className="text-2xl font-bold text-white">
                         {hasPlays ? "Sẵn sàng chơi game!" : "Trò chơi Unity"}
                     </h2>
-                    <p className="text-gray-300">
-                        {hasPlays ? (
+                   <p className="text-gray-300">
+                       {hasPlays ? (
                             <>Bạn có {gamePlays} lượt chơi game. Mỗi lần chơi sẽ tiêu tốn 1 lượt.</>
                         ) : (
                             <>Bạn chưa có lượt chơi game. Hãy mua lượt chơi từ cửa hàng để bắt đầu!</>
@@ -33,14 +33,14 @@ export function GameSection({ gamePlays, cardStyle = "", onNavigateToShop }: Gam
                             size="lg"
                             className="px-8 py-4 text-lg bg-green-600 hover:bg-green-700 text-white"
                         >
-                            <Gamepad2 className="w-6 h-6 mr-2" />
-                            Chơi Game Ngay
+                           <Gamepad2 className="w-6 h-6 mr-2" />
+                          Chơi Game Ngay
                         </Button>
                     ) : (
                         <Button
                             onClick={onNavigateToShop}
                             size="lg"
-                            className="px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700 text-white"
+                           className="px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700 text-white"
                         >
                             <ShoppingBag className="w-6 h-6 mr-2" />
                             Mua Lượt Chơi
