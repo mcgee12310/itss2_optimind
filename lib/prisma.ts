@@ -1,6 +1,5 @@
 import { PrismaNeon } from '@prisma/adapter-neon';
 import { PrismaClient } from '@prisma/client';
-import { neon } from '@neondatabase/serverless';
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
@@ -19,9 +18,8 @@ if (!dbUrl.trim().startsWith('postgres')) {
   throw new Error("DATABASE_URL is not a valid PostgreSQL connection string. Please check .env file.");
 }
 
-// Create Neon client and adapter
-const neonClient = neon(dbUrl.trim());
-const adapter = new PrismaNeon(neonClient);
+// Create adapter with connection string
+const adapter = new PrismaNeon({ connectionString: dbUrl.trim() });
 
 const prismaClientSingleton = () => {
   return new PrismaClient({ adapter });
