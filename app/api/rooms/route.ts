@@ -95,7 +95,7 @@
 
 
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/utils/auth-server";
 
 // GET /api/rooms - Get active rooms

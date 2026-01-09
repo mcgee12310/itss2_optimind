@@ -1,5 +1,5 @@
 // Script to seed chat data for testing
-import { prisma } from '../lib/db';
+import { prisma } from '../lib/prisma';
 
 async function seedChatData() {
   console.log('🌱 Seeding chat data...');

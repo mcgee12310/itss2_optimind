@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 // Helper lấy User ID (tái sử dụng)
 function getUserIdFromCookie(req: Request): string | null {

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/utils/auth-server";
 import StreamVideoProvider from "@/hooks/useStream";
 import BattleRoom from "@/components/rooms/battle-room";
