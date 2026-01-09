@@ -60,7 +60,7 @@ export async function POST(req: Request, context: any) {
         });
       } catch (e) {
         // Skip if member already exists
-        console.log(`Member ${memberId} already in room`);
+        // console.log(`Member ${memberId} already in room`);
       }
     }
 

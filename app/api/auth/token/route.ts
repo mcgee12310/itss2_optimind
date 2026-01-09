@@ -38,7 +38,7 @@ export async function GET(req: Request) {
       iat,
     }) as string;
 
-    console.log("Token generated successfully for user:", user.id);
+    // console.log("Token generated successfully for user:", user.id);
 
     return NextResponse.json(
       { token, user: { id: user.id, username: user.username } },
