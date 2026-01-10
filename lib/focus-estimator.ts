@@ -524,7 +524,7 @@ export class FocusEstimator {
   public estimate(landmarks: Landmark[]): number {
     if (!landmarks || landmarks.length < 468) {
       console.warn("[FocusEstimator] Invalid landmarks (expected >= 468)");
-      return (this.smoothedScore - 50)*2; // Trả về điểm cũ nếu input không hợp lệ
+      return 0;
     }
 
     // 1. Trích xuất metrics

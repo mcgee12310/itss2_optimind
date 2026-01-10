@@ -25,6 +25,7 @@ import {
 	Coffee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { startSilentAudio, stopSilentAudio } from "@/lib/silent-audio";
 
 // Hàm tiện ích
 const glassEffect =
@@ -104,6 +105,8 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 			// Nếu timer kết thúc
 			if (newTimer === 0) {
+				// Ensure audio is stopped when timer ends
+				stopSilentAudio();
 				setIsRunning(false);
 				audioRef.current?.play();
 				startTimeRef.current = 0;
@@ -163,6 +166,8 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 	// --- Handlers ---
 	const resetTimer = (): void => {
+		// Stop background silent audio when resetting
+		stopSilentAudio();
 		setIsRunning(false);
 		setCurrentMode("focus");
 		setCompletedCycles(0);
@@ -183,7 +188,16 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 				setTimer(configCountdownTime * 60);
 			}
 		}
-		setIsRunning(!isRunning);
+
+		if (!isRunning) {
+			// Starting from a user gesture — ensure AudioContext resumes
+			startSilentAudio().catch(() => {});
+			setIsRunning(true);
+		} else {
+			// Stopping — cleanup audio
+			stopSilentAudio();
+			setIsRunning(false);
+		}
 	};
 
 	const openSettings = () => {
@@ -207,6 +221,8 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 		setTimerMode(tempSettings.mode);
 		setIsSettingsOpen(false);
 
+		// Stop silent audio when saving settings (stops session)
+		stopSilentAudio();
 		setIsRunning(false);
 		setCurrentMode("focus");
 		setCompletedCycles(0);
@@ -221,6 +237,8 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 		if (mode === "pomodoro" || mode === "countdown") {
 			const newMode = mode as "pomodoro" | "countdown";
 			setTimerMode(newMode);
+			// Stop silent audio when changing mode
+			stopSilentAudio();
 			setIsRunning(false);
 			setCurrentMode("focus");
 			setCompletedCycles(0);

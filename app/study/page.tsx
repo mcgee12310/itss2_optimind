@@ -8,6 +8,7 @@ import PomodoroTimer from "@/components/study/timer";
 import TaskListWidget from "@/components/study/task-list";
 import FocusChartWidget from "@/components/study/focus-chart";
 import VideoEngagementAnalyzer from "@/hooks/use-engagement-analyzer";
+import { startSilentAudio, stopSilentAudio } from "@/lib/silent-audio"; 
 
 const StudyPage: FC = () => {
   const [showTasks, setShowTasks] = useState<boolean>(true);
@@ -92,6 +93,20 @@ const StudyPage: FC = () => {
       if (logInterval) clearInterval(logInterval);
     };
   }, [isRunning, sessionId, currentFocusScore]);
+
+  // Start silent background audio to reduce throttling while session runs.
+  useEffect(() => {
+    if (isRunning) {
+      // startSilentAudio may require a user gesture to resume audio context in some browsers
+      startSilentAudio().catch(() => {});
+    } else {
+      stopSilentAudio();
+    }
+
+    return () => {
+      stopSilentAudio();
+    };
+  }, [isRunning]);
 
   return (
     <main className="h-screen w-screen text-white p-6 transition-all duration-500 overflow-hidden">

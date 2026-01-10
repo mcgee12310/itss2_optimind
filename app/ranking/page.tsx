@@ -11,13 +11,16 @@ const glassCard = "bg-black/40 backdrop-blur-md border border-white/20 rounded-2
 
 interface LeaderboardUser {
   id: string;
-  name: string | null;
+  name?: string | null;
+  username?: string | null;
   email: string;
-  avatar: string | null;
+  avatar?: string | null;
+  avatarUrl?: string | null;
   level: number;
   exp: number;
   coins: number;
   rank: number;
+  studyHours?: number;
 }
 
 export default function RankingPage() {
@@ -225,14 +228,14 @@ export default function RankingPage() {
                         user.rank === 2 && "ring-gray-300",
                         user.rank === 3 && "ring-amber-600"
                       )}>
-                        <AvatarImage src={user.avatar || undefined} />
+                        <AvatarImage src={user.avatarUrl || user.avatar || undefined} />
                         <AvatarFallback className={cn(
                           user.rank === 1 && "bg-gradient-to-br from-yellow-400 to-orange-500",
                           user.rank === 2 && "bg-gradient-to-br from-gray-300 to-gray-500",
                           user.rank === 3 && "bg-gradient-to-br from-amber-500 to-orange-600",
                           user.rank > 3 && "bg-gradient-to-br from-blue-400 to-purple-500"
                         )}>
-                          {user.name?.[0] || user.email[0]}
+                          {(user.username || user.name || user.email)[0]}
                         </AvatarFallback>
                       </Avatar>
 
@@ -240,7 +243,7 @@ export default function RankingPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-white truncate">
-                            {user.name || user.email}
+                            {user.username || user.name || user.email}
                           </h3>
                           {currentUser?.id === user.id && (
                             <Badge className="bg-purple-500/30 text-purple-200 border-purple-400/50 text-xs">
@@ -266,6 +269,10 @@ export default function RankingPage() {
                         <div className="text-center">
                           <div className="text-xs text-white/50">Coins</div>
                           <div className="font-bold text-green-400">{user.coins}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-white/50">Giờ</div>
+                          <div className="font-bold text-purple-400">{(user.studyHours ?? 0).toFixed(1)}h</div>
                         </div>
                       </div>
                     </div>
