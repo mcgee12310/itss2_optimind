@@ -122,6 +122,37 @@ const StudyPage: FC = () => {
             "flex flex-col items-center justify-between gap-8"
           )}
         >
+          {/* Live Score (mini) */}
+          {/* <div className="absolute top-4 right-4 w-48 bg-black/50 backdrop-blur-sm border border-white/10 rounded-lg p-3 text-white z-20">
+            <div className="flex items-center justify-between">
+              <div
+                className={cn(
+                  "text-xs font-medium px-2 py-1 rounded-full",
+                  !isRunning ? "bg-gray-600 text-white" : currentFocusScore >= 65 ? "bg-green-500 text-white" : "bg-red-500 text-white"
+                )}
+              >
+                {!isRunning ? "📷 Camera tắt" : currentFocusScore >= 65 ? "🎯 Đang tập trung" : "⚠️ Mất tập trung"}
+              </div>
+              <div className="text-lg font-bold">
+                {isRunning ? `${Math.round(currentFocusScore)}%` : "--%"}
+              </div>
+            </div>
+
+            <div className="w-full bg-gray-700 rounded-full h-2 mt-3 overflow-hidden">
+              <div
+                className={cn(
+                  "h-full transition-all duration-500",
+                  currentFocusScore >= 65 ? "bg-green-500" : "bg-red-500"
+                )}
+                style={{ width: isRunning ? `${Math.max(0, Math.min(100, currentFocusScore))}%` : "0%" }}
+              />
+            </div>
+
+            <p className="mt-2 text-xs text-gray-300">
+              {isRunning ? "AI phân tích đang chạy — dữ liệu được ghi cho session" : "Bắt đầu session để AI phân tích"}
+            </p>
+          </div> */}
+
           {/* Widget 1: Timer */}
           <PomodoroTimer
             showTasks={showTasks}
@@ -140,7 +171,7 @@ const StudyPage: FC = () => {
             {/* Widget 3: Chart */}
             <FocusChartWidget 
               isRunning={isRunning}
-              currentFocusScore={currentFocusScore}
+              currentFocusScore={Math.max(0, Math.min(100, currentFocusScore))}
             />
           </div>
         </div>

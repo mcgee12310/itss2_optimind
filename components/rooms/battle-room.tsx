@@ -282,7 +282,7 @@ export default function StudyRoom({ roomId }: { roomId: string }) {
             <div className="absolute top-4 left-6 z-20 flex items-center gap-3 opacity-0 hover:opacity-100 transition-opacity duration-300">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-full border border-white/10">
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
-                    <h1 className="text-sm font-semibold text-white/90">Phòng Học Tập</h1>
+                    <h1 className="text-sm font-semibold text-white/90">Phòng Thi đấu</h1>
                 </div>
             </div>
 

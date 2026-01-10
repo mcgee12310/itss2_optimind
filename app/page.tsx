@@ -367,7 +367,7 @@ export default function LandingPage() {
               "Tập trung hơn"
             </h3>
             <p className="text-lg text-gray-700">
-              AI nhẹ nhàng nhắc nhở mỗi khi bạn có các cử động vi mô bất thường, báo hiệu mất 	tập trung hoặc mệt mỏi.
+              AI nhẹ nhàng nhắc nhở mỗi khi bạn có các cử động vi mô bất thường, báo hiệu mất tập trung hoặc mệt mỏi.
             </p>
             <Button
               variant="link"
@@ -609,7 +609,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="md:order-last animate-fade-in-up">
               <img
-                src="https://images.unsplash.com/photo-1599481238640-4c1278592A6a?q=80&w=800&auto=format=fit=crop"
+                src="https://cdn2.fptshop.com.vn/unsafe/Uploads/images/tin-tuc/168472/Originals/gamification-la-gi-1.jpg"
                 alt="Gamification"
                 className={cn(
                   "rounded-2xl shadow-xl w-full object-cover",
