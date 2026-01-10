@@ -1,9 +1,11 @@
-import { prisma } from '../lib/prisma';
+const { PrismaClient } = require('@prisma/client');
+require('dotenv').config();
 
-async function main() {
-  console.log('Seeding database...');
+const prisma = new PrismaClient();
 
-  // Create shop items
+async function seedShop() {
+  console.log('Seeding shop items...');
+
   const shopItems = [
     // Food items
     {
@@ -12,7 +14,6 @@ async function main() {
       description: 'A fresh apple that restores hunger',
       price: 10,
       type: 'food',
-
     },
     {
       id: 'sandwich-1',
@@ -20,7 +21,6 @@ async function main() {
       description: 'A delicious sandwich',
       price: 20,
       type: 'food',
-
     },
     {
       id: 'pizza-1',
@@ -28,7 +28,6 @@ async function main() {
       description: 'A tasty pizza slice',
       price: 30,
       type: 'food',
-
     },
     // Decoration items
     {
@@ -37,7 +36,6 @@ async function main() {
       description: 'A nice desk for your pet',
       price: 100,
       type: 'decoration',
-
     },
     {
       id: 'bookshelf-1',
@@ -45,7 +43,6 @@ async function main() {
       description: 'Store your favorite books',
       price: 150,
       type: 'decoration',
-
     },
     {
       id: 'plant-1',
@@ -53,7 +50,6 @@ async function main() {
       description: 'A beautiful plant for decoration',
       price: 50,
       type: 'decoration',
-
     },
     // Toy items
     {
@@ -62,7 +58,6 @@ async function main() {
       description: 'A bouncy ball to play with',
       price: 15,
       type: 'toy',
-
     },
     {
       id: 'puzzle-1',
@@ -70,7 +65,6 @@ async function main() {
       description: 'A fun puzzle game',
       price: 25,
       type: 'toy',
-
     },
     // Background items
     {
@@ -79,7 +73,6 @@ async function main() {
       description: 'A peaceful forest scene',
       price: 200,
       type: 'background',
-
     },
     {
       id: 'bg-beach-1',
@@ -87,7 +80,6 @@ async function main() {
       description: 'Relax at the beach',
       price: 200,
       type: 'background',
-
     },
     {
       id: 'bg-space-1',
@@ -95,7 +87,6 @@ async function main() {
       description: 'Study among the stars',
       price: 250,
       type: 'background',
-
     },
     // Pet items
     {
@@ -129,7 +120,6 @@ async function main() {
       description: 'Buy 1 extra game session',
       price: 50,
       type: 'game_play',
-
     },
     {
       id: 'game-play-2',
@@ -137,7 +127,6 @@ async function main() {
       description: 'Buy 2 extra game sessions',
       price: 90,
       type: 'game_play',
-
     },
     {
       id: 'game-play-3',
@@ -145,7 +134,6 @@ async function main() {
       description: 'Buy 3 extra game sessions',
       price: 120,
       type: 'game_play',
-
     },
   ];
 
@@ -158,6 +146,13 @@ async function main() {
   }
 
   console.log('✅ Shop items seeded');
+}
+
+async function main() {
+  await prisma.$connect();
+  console.log('CONNECTED OK');
+  console.log('Seeding database...');
+  await seedShop();
 
   // Create a demo user
   const demoUser = await prisma.user.upsert({

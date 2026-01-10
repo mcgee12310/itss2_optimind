@@ -1,5 +1,7 @@
-// SỬA DÒNG IMPORT NÀY: Dùng instance có sẵn từ lib/db thay vì tự new PrismaClient()
-import { prisma } from '../lib/prisma'; 
+import { PrismaClient  } from '@prisma/client';
+
+export const prisma = new PrismaClient();
+
 
 async function main() {
   // 1. Nhập email của tài khoản bạn muốn thêm dữ liệu test

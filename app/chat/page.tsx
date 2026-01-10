@@ -401,7 +401,7 @@ const handleSendMessage = async (messageText: string) => {
       <div className="relative w-full h-full">
         {/* === Nội dung chính - Chat === */}
         <div
-          className={cn(
+          className={cn(  
             "absolute top-20 bottom-6 left-24 right-24",
             "flex divide-x divide-white/20",
             glassEffect,
