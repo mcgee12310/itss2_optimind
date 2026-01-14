@@ -4,8 +4,13 @@ import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-	title: "Optimind",
+	title: "Optimind - Deep Work with AI",
+	icons: {
+		icon: "/icon.svg",
+	},
 	description: "An AI-powered platform to optimize your mind and boost productivity.",
+	keywords: ["optimind", "deep work", "ai", "productivity", "mind optimization"],
+
 };
 
 export default function RootLayout({
