@@ -38,6 +38,8 @@ import {
   History,
   LogOut,
   Users,
+  Menu,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
@@ -87,6 +89,7 @@ export default function LandingPage() {
 
   // --- State cho hiệu ứng Header & Auth ---
   const [isScrolled, setIsScrolled] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -189,7 +192,7 @@ export default function LandingPage() {
             </span>
           </Link>
 
-          {/* Navigation Links */}
+          {/* Navigation Links - Desktop */}
           <nav className="hidden md:flex gap-6">
             <Link
               href="#features"
@@ -226,8 +229,8 @@ export default function LandingPage() {
             </Link>
           </nav>
 
-          {/* === Nút Đăng nhập / Đăng ký === */}
-          <div className="flex gap-2 ml-auto">
+          {/* === Nút Đăng nhập / Đăng ký - Desktop === */}
+          <div className="hidden md:flex gap-2 ml-auto">
             {loading && (
               <div className="flex gap-2">
                 <div className="h-10 w-24 rounded-full bg-gray-500/30 animate-pulse" />
@@ -310,14 +313,124 @@ export default function LandingPage() {
               </>
             )}
           </div>
+
+          {/* === Mobile Menu Button === */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "md:hidden ml-auto",
+              isScrolled ? "text-blue-800" : "text-white"
+            )}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </Button>
         </div>
       </header>
+
+      {/* === Mobile Menu Drawer === */}
+      <div
+        className={cn(
+          "fixed inset-0 z-40 md:hidden transition-all duration-300",
+          isMobileMenuOpen ? "visible" : "invisible"
+        )}
+      >
+        {/* Overlay */}
+        <div
+          className={cn(
+            "absolute inset-0 bg-black/50 transition-opacity duration-300",
+            isMobileMenuOpen ? "opacity-100" : "opacity-0"
+          )}
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+
+        {/* Menu Content */}
+        <div
+          className={cn(
+            "absolute top-0 right-0 h-full w-72 bg-white shadow-xl transition-transform duration-300",
+            isMobileMenuOpen ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <div className="p-6 pt-20 flex flex-col gap-4">
+            {/* Nav Links */}
+            <Link
+              href="#features"
+              className="text-lg font-medium text-blue-800 py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Có gì hay?
+            </Link>
+            <Link
+              href="#reviews"
+              className="text-lg font-medium text-blue-800 py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Cộng đồng
+            </Link>
+            <Link
+              href="#faq"
+              className="text-lg font-medium text-blue-800 py-2"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Hỏi đáp
+            </Link>
+
+            <hr className="my-4 border-gray-200" />
+
+            {/* Auth Buttons */}
+            {!loading && !user && (
+              <>
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Đăng nhập
+                  </Link>
+                </Button>
+                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Link href="/register" onClick={() => setIsMobileMenuOpen(false)}>
+                    Tham gia ngay
+                  </Link>
+                </Button>
+              </>
+            )}
+
+            {!loading && user && (
+              <>
+                <Button asChild variant="outline" className="w-full justify-start">
+                  <Link href="/history" onClick={() => setIsMobileMenuOpen(false)}>
+                    <History className="mr-2 h-4 w-4" />
+                    Lịch sử
+                  </Link>
+                </Button>
+                <Button asChild className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Link href="/study" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Play className="mr-2 h-4 w-4" />
+                    Vào bàn học
+                  </Link>
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    handleLogout();
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className="w-full justify-start text-red-600"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Đăng xuất
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* === PHẦN 1: HERO === */}
       <section
         className={cn(
-          "w-screen flex flex-col items-center justify-center p-8 text-center relative overflow-hidden",
-          "h-[550px] max-h-[600px]"
+          "w-screen flex flex-col items-center justify-center px-4 py-8 md:p-8 text-center relative overflow-hidden",
+          "min-h-[400px] md:h-[550px] md:max-h-[600px]"
         )}
       >
         <img
@@ -325,25 +438,25 @@ export default function LandingPage() {
           alt="Optimind Hero Background"
           className="absolute inset-0 w-full h-full object-cover z-0"
         />
-        <div className="relative z-10 w-full max-w-3xl animate-fade-in-up p-8">
+        <div className="relative z-10 w-full max-w-3xl animate-fade-in-up p-4 md:p-8">
           <h1
-            className="text-6xl font-extrabold leading-tight text-white"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight text-white"
             style={{ textShadow: "0 4px 15px rgba(0,0,0,0.5)" }}
           >
             Học tập trung <br /> Chơi hết mình
           </h1>
           <p
-            className="mt-6 text-xl text-gray-100 max-w-2xl mx-auto"
+            className="mt-4 md:mt-6 text-base md:text-xl text-gray-100 max-w-2xl mx-auto"
             style={{ textShadow: "0 2px 5px rgba(0,0,0,0.3)" }}
           >
             Đừng để sự xao nhãng đánh cắp tương lai của bạn. Optimind biến mỗi
             giờ học thành trạng thái "Deep Work" thực thụ.
           </p>
-          <div className="mt-8 flex gap-4 justify-center">
+          <div className="mt-6 md:mt-8 flex gap-4 justify-center">
             <Button
               asChild
               size="lg"
-              className="bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-lg h-14 px-8 rounded-full text-white"
+              className="bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-base md:text-lg h-12 md:h-14 px-6 md:px-8 rounded-full text-white w-full sm:w-auto"
             >
               <Link href="/register">Bắt đầu hành trình ngay</Link>
             </Button>
@@ -354,16 +467,16 @@ export default function LandingPage() {
       {/* === PHẦN 2: HỖ TRỢ === */}
       <section
         id="features"
-        className="h-auto w-screen flex flex-col items-center justify-center p-8 py-24 bg-white"
+        className="h-auto w-screen flex flex-col items-center justify-center px-4 py-16 md:p-8 md:py-24 bg-white"
       >
-        <h2 className="text-5xl font-bold mb-4 text-center text-blue-800">
+        <h2 className="text-3xl md:text-5xl font-bold mb-4 text-center text-blue-800">
           Tại sao bạn cần Optimind?
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl mx-auto mt-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 max-w-5xl mx-auto mt-8 md:mt-16">
           {/* Cột 1: Tập trung */}
           <div className="flex flex-col items-center text-center animate-fade-in-up">
             <Brain className="w-12 h-12 text-blue-500" />
-            <h3 className="text-3xl font-semibold my-4 text-blue-800">
+            <h3 className="text-2xl md:text-3xl font-semibold my-4 text-blue-800">
               "Tập trung hơn"
             </h3>
             <p className="text-lg text-gray-700">
@@ -382,7 +495,7 @@ export default function LandingPage() {
             style={{ animationDelay: "0.2s" }}
           >
             <Timer className="w-12 h-12 text-green-500" />
-            <h3 className="text-3xl font-semibold my-4 text-blue-800">
+            <h3 className="text-2xl md:text-3xl font-semibold my-4 text-blue-800">
               Xử gọn Deadline
             </h3>
             <p className="text-lg text-gray-700">
@@ -402,7 +515,7 @@ export default function LandingPage() {
             style={{ animationDelay: "0.4s" }}
           >
             <Star className="w-12 h-12 text-yellow-500" />
-            <h3 className="text-3xl font-semibold my-4 text-blue-800">
+            <h3 className="text-2xl md:text-3xl font-semibold my-4 text-blue-800">
               Học chán? Có Pet lo
             </h3>
             <p className="text-lg text-gray-700">
@@ -422,7 +535,7 @@ export default function LandingPage() {
       {/* === PHẦN 3: DEMO === */}
       <section
         className={cn(
-          "relative w-screen flex flex-col items-center justify-center p-8 overflow-hidden",
+          "relative w-screen flex flex-col items-center justify-center px-4 md:p-8 overflow-hidden",
           "py-10"
         )}
       >
@@ -437,9 +550,9 @@ export default function LandingPage() {
         />
 
         {/* Tiêu đề */}
-        <div className="relative z-10 w-full max-w-4xl text-center mb-8">
+        <div className="relative z-10 w-full max-w-4xl text-center mb-6 md:mb-8 px-4">
           <h2
-            className="text-5xl font-bold mb-4 text-white"
+            className="text-3xl md:text-5xl font-bold mb-4 text-white"
             style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}
           >
             Thử thách 5 phút!
@@ -461,17 +574,17 @@ export default function LandingPage() {
             "bg-white/80 backdrop-blur-sm overflow-hidden"
           )}
         >
-          <div className={cn("w-full p-8")}>
-            <div className="flex flex-col md:flex-row gap-8">
+          <div className={cn("w-full p-4 md:p-8")}>
+            <div className="flex flex-col md:flex-row gap-6 md:gap-8">
               {/* Cột 1: Timer + Chart */}
               <div className="flex-1 flex flex-col items-center justify-center gap-4">
                 {/* Timer & Buttons */}
                 <div className="w-full flex-1 flex flex-col items-center justify-center p-6 bg-gray-100/80 rounded-lg shadow-inner">
-                  <h3 className="text-2xl font-semibold mb-4 text-blue-800">
+                  <h3 className="text-xl md:text-2xl font-semibold mb-4 text-blue-800">
                     Đồng hồ Pomodoro
                   </h3>
                   <div className="flex items-center justify-center gap-4">
-                    <div className="text-6xl font-bold text-blue-800">
+                    <div className="text-4xl md:text-6xl font-bold text-blue-800">
                       {" "}
                       {formatTime(timeLeft)}
                     </div>
@@ -572,20 +685,20 @@ export default function LandingPage() {
       </section>
 
       {/* === PHẦN 4: TÍNH NĂNG === */}
-      <section className="h-auto w-screen flex flex-col items-center justify-center p-8 py-24 bg-white">
-        <h2 className="text-5xl font-bold mb-16 text-center text-blue-800">
+      <section className="h-auto w-screen flex flex-col items-center justify-center px-4 py-16 md:p-8 md:py-24 bg-white">
+        <h2 className="text-3xl md:text-5xl font-bold mb-8 md:mb-16 text-center text-blue-800">
           Công cụ "hack" não bộ
         </h2>
-        <div className="flex flex-col gap-16 max-w-7xl">
+        <div className="flex flex-col gap-12 md:gap-16 max-w-7xl w-full">
           {/* Tính năng 1: Đo lường */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
             <div className="animate-fade-in-up">
               <img
                 src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format=fit=crop"
                 alt="Đo lường tập trung"
                 className={cn(
                   "rounded-2xl shadow-xl w-full object-cover",
-                  "h-[450px]"
+                  "h-[280px] md:h-[450px]"
                 )}
               />
             </div>
@@ -593,8 +706,8 @@ export default function LandingPage() {
               className="animate-fade-in-up"
               style={{ animationDelay: "0.2s" }}
             >
-              <Brain className="h-12 w-12 text-blue-500 mb-4" />
-              <h3 className="text-4xl font-semibold mb-4 text-blue-800">
+              <Brain className="h-10 w-10 md:h-12 md:w-12 text-blue-500 mb-4" />
+              <h3 className="text-2xl md:text-4xl font-semibold mb-4 text-blue-800">
                 AI Giám Sát (Nhưng không mách lẻo)
               </h3>
               <p className="text-lg text-gray-700">
@@ -606,14 +719,14 @@ export default function LandingPage() {
           </div>
 
           {/* Tính năng 2: Gamification */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
             <div className="md:order-last animate-fade-in-up">
               <img
                 src="https://cdn2.fptshop.com.vn/unsafe/Uploads/images/tin-tuc/168472/Originals/gamification-la-gi-1.jpg"
                 alt="Gamification"
                 className={cn(
                   "rounded-2xl shadow-xl w-full object-cover",
-                  "h-[450px]"
+                  "h-[280px] md:h-[450px]"
                 )}
               />
             </div>
@@ -621,8 +734,8 @@ export default function LandingPage() {
               className="animate-fade-in-up"
               style={{ animationDelay: "0.2s" }}
             >
-              <Star className="h-12 w-12 text-yellow-500 mb-4" />
-              <h3 className="text-4xl font-semibold mb-4 text-blue-800">
+              <Star className="h-10 w-10 md:h-12 md:w-12 text-yellow-500 mb-4" />
+              <h3 className="text-2xl md:text-4xl font-semibold mb-4 text-blue-800">
                 Nuôi Pet bằng sự tập trung
               </h3>
               <p className="text-lg text-gray-700">
@@ -634,14 +747,14 @@ export default function LandingPage() {
           </div>
 
           {/* Tính năng 3: Phòng học */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center">
             <div className="animate-fade-in-up">
               <img
                 src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format=fit=crop"
                 alt="Phòng học nhóm"
                 className={cn(
                   "rounded-2xl shadow-xl w-full object-cover",
-                  "h-[450px]"
+                  "h-[280px] md:h-[450px]"
                 )}
               />
             </div>
@@ -649,8 +762,8 @@ export default function LandingPage() {
               className="animate-fade-in-up"
               style={{ animationDelay: "0.2s" }}
             >
-              <Users className="h-12 w-12 text-green-500 mb-4" />
-              <h3 className="text-4xl font-semibold mb-4 text-blue-800">
+              <Users className="h-10 w-10 md:h-12 md:w-12 text-green-500 mb-4" />
+              <h3 className="text-2xl md:text-4xl font-semibold mb-4 text-blue-800">
                 Solo 1vs1: Ai lì hơn?
               </h3>
               <p className="text-lg text-gray-700">
@@ -666,13 +779,13 @@ export default function LandingPage() {
       {/* === PHẦN 5: NHẬN XÉT === */}
       <section
         id="reviews"
-        className="h-auto w-screen flex flex-col items-center justify-center p-8 py-24 bg-blue-600 text-white overflow-hidden"
+        className="h-auto w-screen flex flex-col items-center justify-center px-4 py-16 md:p-8 md:py-24 bg-blue-600 text-white overflow-hidden"
       >
         <style>{`
           .no-scrollbar::-webkit-scrollbar { display: none; }
           .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         `}</style>
-        <h2 className="text-5xl font-bold mb-12">Hội những người đã "thoát kiếp" lười</h2>
+        <h2 className="text-3xl md:text-5xl font-bold mb-8 md:mb-12">Hội những người đã "thoát kiếp" lười</h2>
         <div className="w-full max-w-7xl flex overflow-x-auto gap-8 scroll-snap-type-x-mandatory no-scrollbar pb-4">
           <div
             className={cn(
@@ -766,15 +879,15 @@ export default function LandingPage() {
       </section>
 
       {/* === PHẦN 6: VỀ CHÚNG TÔI === */}
-      <section className="h-auto w-screen flex flex-col items-center justify-center p-8 py-24 bg-white">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center max-w-7xl">
+      <section className="h-auto w-screen flex flex-col items-center justify-center px-4 py-16 md:p-8 md:py-24 bg-white">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 items-center max-w-7xl w-full">
           <div className="animate-fade-in-up">
             <img
               src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=800&auto=format=fit=crop"
               alt="Đội ngũ Optimind"
               className={cn(
                 "rounded-2xl shadow-xl w-full object-cover",
-                "h-[450px]"
+                "h-[280px] md:h-[450px]"
               )}
             />
           </div>
@@ -782,16 +895,16 @@ export default function LandingPage() {
             className="animate-fade-in-up"
             style={{ animationDelay: "0.2s" }}
           >
-            <h2 className="text-4xl font-semibold mb-4 text-blue-800">
+            <h2 className="text-2xl md:text-4xl font-semibold mb-4 text-blue-800">
               Từ những "kẻ mộng mơ" lười biếng
             </h2>
-            <p className="text-lg text-gray-700 mb-6">
+            <p className="text-base md:text-lg text-gray-700 mb-6">
               Tụi mình cũng từng là sinh viên, cũng từng vật vã vì lướt TikTok
               quên lối về mỗi mùa thi. Optimind ra đời không phải từ những
               chuyên gia xa lạ, mà từ chính nhu cầu "cứu vớt" tấm bằng của
               nhóm sáng lập.
             </p>
-            <h3 className="text-3xl font-semibold mb-4 text-blue-800">
+            <h3 className="text-xl md:text-3xl font-semibold mb-4 text-blue-800">
               Mục tiêu đơn giản
             </h3>
             <p className="text-lg text-gray-700">
@@ -806,12 +919,12 @@ export default function LandingPage() {
       {/* === PHẦN 7: FAQ === */}
       <section
         id="faq"
-        className="h-auto w-screen flex flex-col items-center justify-center p-8 py-24 bg-gray-100"
+        className="h-auto w-screen flex flex-col items-center justify-center px-4 py-16 md:p-8 md:py-24 bg-gray-100"
       >
-        <h2 className="text-5xl font-bold mb-12 text-blue-800">
+        <h2 className="text-3xl md:text-5xl font-bold mb-8 md:mb-12 text-blue-800">
           Thắc mắc thường gặp
         </h2>
-        <div className={cn("w-full max-w-3xl p-6", whiteBox)}>
+        <div className={cn("w-full max-w-3xl p-4 md:p-6", whiteBox)}>
           <h4 className="text-xl font-semibold mb-4 text-blue-600">
             Về công nghệ & Riêng tư
           </h4>
@@ -868,7 +981,7 @@ export default function LandingPage() {
       {/* === PHẦN 8: HƯỚNG DẪN SỬ DỤNG === */}
       <section
         className={cn(
-          "h-auto w-screen flex flex-col items-center justify-center p-8 py-24 relative overflow-hidden"
+          "h-auto w-screen flex flex-col items-center justify-center px-4 py-16 md:p-8 md:py-24 relative overflow-hidden"
         )}
       >
         {/* Ảnh nền họa tiết */}
@@ -879,9 +992,9 @@ export default function LandingPage() {
             "absolute inset-0 w-full h-full object-cover z-0 opacity-40 blur-sm"
           )}
         />
-        <div className="relative z-10 text-center mb-12 p-6">
+        <div className="relative z-10 text-center mb-8 md:mb-12 p-4 md:p-6">
           <h2
-            className="text-5xl font-bold mb-8 text-blue-800"
+            className="text-3xl md:text-5xl font-bold mb-4 md:mb-8 text-blue-800"
             style={{
               textShadow: "0 2px 10px rgba(255,255,255,0.3)",
             }}
@@ -889,7 +1002,7 @@ export default function LandingPage() {
             4 Bước để "hack" sự tập trung
           </h2>
           <p
-            className="text-xl text-gray-700 max-w-3xl mx-auto"
+            className="text-base md:text-xl text-gray-700 max-w-3xl mx-auto"
             style={{
               textShadow: "0 1px 5px rgba(255,255,255,0.2)",
             }}
@@ -898,24 +1011,29 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="relative z-10 w-full max-w-6xl mx-auto">
+        <div className="relative z-10 w-full max-w-6xl mx-auto px-4">
           {/* Đường timeline */}
           <div className="hidden md:block absolute left-1/2 top-10 bottom-10 w-1 bg-gray-200 -translate-x-1/2" />
 
-          <div className="relative flex flex-col items-center gap-4">
+          <div className="relative flex flex-col items-center gap-4 md:gap-4">
             {/* Bước 1 */}
-            <div className="w-full md:w-1/2 md:pr-12 flex gap-6 items-center">
+            <div className="w-full md:w-1/2 md:pr-12 flex gap-4 md:gap-6 items-center">
               <div
                 className={cn(
-                  "p-6 text-left",
+                  "p-4 md:p-6 text-left",
                   whiteBox,
                   "flex-1"
                 )}
               >
-                <h4 className="text-2xl font-semibold mt-2 mb-2 text-blue-800">
-                  1. Lên nòng (Plan)
-                </h4>
-                <p className="text-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex md:hidden items-center justify-center w-10 h-10 bg-blue-500 text-white rounded-full shrink-0">
+                    <CheckSquare className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-semibold text-blue-800">
+                    1. Lên nòng (Plan)
+                  </h4>
+                </div>
+                <p className="text-sm md:text-base text-gray-700">
                   Vào mục 'Kế hoạch', liệt kê những thứ cần làm. Đừng tham, chọn
                   3 việc quan trọng nhất thôi.
                 </p>
@@ -926,21 +1044,26 @@ export default function LandingPage() {
             </div>
 
             {/* Bước 2 */}
-            <div className="w-full md:w-1/2 md:pl-12 md:self-end flex gap-6 items-center">
+            <div className="w-full md:w-1/2 md:pl-12 md:self-end flex gap-4 md:gap-6 items-center">
               <div className="hidden md:flex items-center justify-center w-20 h-20 bg-green-500 text-white rounded-full shrink-0 shadow-lg">
                 <Camera className="w-10 h-10" />
               </div>
               <div
                 className={cn(
-                  "p-6 text-left",
+                  "p-4 md:p-6 text-left",
                   whiteBox,
                   "flex-1"
                 )}
               >
-                <h4 className="text-2xl font-semibold mt-2 mb-2 text-blue-800">
-                  2. Chiến (Focus)
-                </h4>
-                <p className="text-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex md:hidden items-center justify-center w-10 h-10 bg-green-500 text-white rounded-full shrink-0">
+                    <Camera className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-semibold text-blue-800">
+                    2. Chiến (Focus)
+                  </h4>
+                </div>
+                <p className="text-sm md:text-base text-gray-700">
                   Bật cam, chọn task, nhấn Play. Lúc này là lúc "Deep Work". AI
                   sẽ canh chừng cho bạn.
                 </p>
@@ -948,18 +1071,23 @@ export default function LandingPage() {
             </div>
 
             {/* Bước 3 */}
-            <div className="w-full md:w-1/2 md:pr-12 flex gap-6 items-center">
+            <div className="w-full md:w-1/2 md:pr-12 flex gap-4 md:gap-6 items-center">
               <div
                 className={cn(
-                  "p-6 text-left",
+                  "p-4 md:p-6 text-left",
                   whiteBox,
                   "flex-1"
                 )}
               >
-                <h4 className="text-2xl font-semibold mt-2 mb-2 text-blue-800">
-                  3. Soi (Analyze)
-                </h4>
-                <p className="text-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex md:hidden items-center justify-center w-10 h-10 bg-purple-500 text-white rounded-full shrink-0">
+                    <PieChart className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-semibold text-blue-800">
+                    3. Soi (Analyze)
+                  </h4>
+                </div>
+                <p className="text-sm md:text-base text-gray-700">
                   Học xong xem lại biểu đồ (<PieChart className="inline w-4 h-4" />).
                   Xem mình lơ đễnh lúc nào để lần sau rút kinh nghiệm.
                 </p>
@@ -970,21 +1098,26 @@ export default function LandingPage() {
             </div>
 
             {/* Bước 4 */}
-            <div className="w-full md:w-1/2 md:pl-12 md:self-end flex gap-6 items-center">
+            <div className="w-full md:w-1/2 md:pl-12 md:self-end flex gap-4 md:gap-6 items-center">
               <div className="hidden md:flex items-center justify-center w-20 h-20 bg-yellow-500 text-white rounded-full shrink-0 shadow-lg">
                 <Star className="w-10 h-10" />
               </div>
               <div
                 className={cn(
-                  "p-6 text-left",
+                  "p-4 md:p-6 text-left",
                   whiteBox,
                   "flex-1"
                 )}
               >
-                <h4 className="text-2xl font-semibold mt-2 mb-2 text-blue-800">
-                  4. Nhận quà (Reward)
-                </h4>
-                <p className="text-gray-700">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex md:hidden items-center justify-center w-10 h-10 bg-yellow-500 text-white rounded-full shrink-0">
+                    <Star className="w-5 h-5" />
+                  </div>
+                  <h4 className="text-xl md:text-2xl font-semibold text-blue-800">
+                    4. Nhận quà (Reward)
+                  </h4>
+                </div>
+                <p className="text-sm md:text-base text-gray-700">
                   Nhận điểm kinh nghiệm, cho Pet ăn, leo rank. Cảm giác hoàn
                   thành mục tiêu nó "phê" lắm (<Star className="inline w-4 h-4" />).
                 </p>
@@ -997,7 +1130,7 @@ export default function LandingPage() {
       {/* === PHẦN 9: CTA & FOOTER === */}
       <footer
         className={cn(
-          "h-auto w-screen p-8 py-24 bg-gray-900 text-white relative overflow-hidden"
+          "h-auto w-screen px-4 py-16 md:p-8 md:py-24 bg-gray-900 text-white relative overflow-hidden"
         )}
       >
         {/* Ảnh nền cho footer */}
@@ -1009,9 +1142,9 @@ export default function LandingPage() {
 
         <div className="relative z-10 w-full max-w-7xl mx-auto">
           {/* Nút CTA ở trên */}
-          <div className="text-center mb-16 p-8">
+          <div className="text-center mb-12 md:mb-16 p-4 md:p-8">
             <h2
-              className="text-5xl font-bold mb-8 text-white"
+              className="text-3xl md:text-5xl font-bold mb-6 md:mb-8 text-white"
               style={{ textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}
             >
               Còn chờ gì nữa?
@@ -1019,14 +1152,14 @@ export default function LandingPage() {
             <Button
               asChild
               size="lg"
-              className="bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-lg h-16 px-10 rounded-full text-white"
+              className="bg-linear-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-base md:text-lg h-14 md:h-16 px-6 md:px-10 rounded-full text-white w-full sm:w-auto"
             >
               <Link href="/register">Tham gia Optimind ngay (Miễn phí)</Link>
             </Button>
           </div>
 
           {/* === FOOTER MỞ RỘNG === */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-6 md:gap-8">
             {/* Cột 1: Logo */}
             <div className="col-span-2 md:col-span-1">
               <div className="flex items-center gap-2 mb-4">
@@ -1049,7 +1182,7 @@ export default function LandingPage() {
                 <li><Link href="/blog" className="text-gray-400 hover:text-white">Blog học tập</Link></li>
               </ul>
             </div>
-            
+
             <div>
               <h5 className="font-semibold text-white mb-4">Ưu đãi</h5>
               <ul className="space-y-3">
@@ -1074,14 +1207,14 @@ export default function LandingPage() {
               </ul>
             </div>
           </div>
-          
+
           <div className="flex justify-between items-center mt-16 pt-8 border-t border-gray-700">
-             <div className="flex gap-4">
-               {/* Social Icons giữ nguyên */}
-                <Link href="#" className="text-gray-400 hover:text-white"><Facebook className="w-6 h-6" /></Link>
-                <Link href="#" className="text-gray-400 hover:text-white"><Twitter className="w-6 h-6" /></Link>
-                <Link href="#" className="text-gray-400 hover:text-white"><Instagram className="w-6 h-6" /></Link>
-             </div>
+            <div className="flex gap-4">
+              {/* Social Icons giữ nguyên */}
+              <Link href="#" className="text-gray-400 hover:text-white"><Facebook className="w-6 h-6" /></Link>
+              <Link href="#" className="text-gray-400 hover:text-white"><Twitter className="w-6 h-6" /></Link>
+              <Link href="#" className="text-gray-400 hover:text-white"><Instagram className="w-6 h-6" /></Link>
+            </div>
           </div>
         </div>
       </footer>

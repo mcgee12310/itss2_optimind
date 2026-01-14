@@ -61,9 +61,12 @@ export default function RegisterPage() {
 	};
 
 	// Xử lý đăng nhập OAuth (Google)
-	const handleOAuthLogin = async (_provider: "google" | "apple") => {
-		// OAuth chưa được cấu hình cho backend tuỳ chỉnh
-		setError("OAuth chưa được hỗ trợ trong phiên bản này");
+	const handleOAuthLogin = async (provider: "google" | "apple") => {
+		if (provider === "google") {
+			window.location.href = "/api/auth/google";
+		} else {
+			setError("Apple OAuth chưa được hỗ trợ trong phiên bản này");
+		}
 	};
 
 	return (
@@ -277,7 +280,7 @@ export default function RegisterPage() {
 								<div className="flex flex-col gap-4">
 									<Button
 										variant="outline"
-										className="w-full text-base h-11 bg-white hover:bg-gray-200 text-gray-800"
+										className="w-full text-base h-11 bg-white hover:bg-gray-300 text-gray-800"
 										onClick={() =>
 											handleOAuthLogin("google")
 										}

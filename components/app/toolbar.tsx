@@ -168,7 +168,10 @@ const ControlToolbar: FC<ControlToolbarProps> = ({
 		<TooltipProvider>
 			<div
 				className={cn(
-					"absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3 p-3 z-30",
+					// Mobile: bottom right, above the bottom nav bar
+					"fixed right-2 bottom-16 flex flex-row gap-2 p-2 z-30",
+					// Desktop: right side, vertical centered
+					"md:absolute md:right-4 md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:flex-col md:gap-3 md:p-3",
 					glassEffect,
 					"transition-all duration-300 ease-in-out",
 					isUiVisible

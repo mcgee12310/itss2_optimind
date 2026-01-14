@@ -8,16 +8,16 @@ import PomodoroTimer from "@/components/study/timer";
 import TaskListWidget from "@/components/study/task-list";
 import FocusChartWidget from "@/components/study/focus-chart";
 import VideoEngagementAnalyzer from "@/hooks/use-engagement-analyzer";
-import { startSilentAudio, stopSilentAudio } from "@/lib/silent-audio"; 
+import { startSilentAudio, stopSilentAudio } from "@/lib/silent-audio";
 
 const StudyPage: FC = () => {
   const [showTasks, setShowTasks] = useState<boolean>(true);
   const [isRunning, setIsRunning] = useState<boolean>(false);
-  
+
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentFocusScore, setCurrentFocusScore] = useState<number>(0);
-  
-  const focusLogsRef = useRef<number[]>([]); 
+
+  const focusLogsRef = useRef<number[]>([]);
   const { refreshStats } = useDashboardStats();
 
 
@@ -28,9 +28,9 @@ const StudyPage: FC = () => {
           const res = await fetch("/api/sessions", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ 
-                taskTitle: "Học tập trung", 
-                pomodoroCount: 1 
+            body: JSON.stringify({
+              taskTitle: "Học tập trung",
+              pomodoroCount: 1
             }),
           });
 
@@ -46,7 +46,7 @@ const StudyPage: FC = () => {
     };
 
     initSession();
-  }, [isRunning, sessionId]); 
+  }, [isRunning, sessionId]);
 
   useEffect(() => {
     return () => {
@@ -60,11 +60,11 @@ const StudyPage: FC = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ focusScore: avgFocus }),
         })
-        .then(() => {
-          // Refresh dashboard stats sau khi kết thúc session
-          refreshStats();
-        })
-        .catch(err => console.error("Error ending session:", err));
+          .then(() => {
+            // Refresh dashboard stats sau khi kết thúc session
+            refreshStats();
+          })
+          .catch(err => console.error("Error ending session:", err));
       }
     };
   }, [sessionId, refreshStats]);
@@ -86,7 +86,7 @@ const StudyPage: FC = () => {
         } catch (err) {
           console.error("Failed to log focus score:", err);
         }
-      }, 5000); 
+      }, 5000);
     }
 
     return () => {
@@ -98,7 +98,7 @@ const StudyPage: FC = () => {
   useEffect(() => {
     if (isRunning) {
       // startSilentAudio may require a user gesture to resume audio context in some browsers
-      startSilentAudio().catch(() => {});
+      startSilentAudio().catch(() => { });
     } else {
       stopSilentAudio();
     }
@@ -113,17 +113,17 @@ const StudyPage: FC = () => {
       <div className="relative w-full h-full">
         {/* === AI Camera Analysis (Hidden but active) === */}
         {isRunning && (
-          <div style={{ 
-            position: "fixed", 
-            bottom: 0, 
-            right: 0, 
-            width: 1, 
-            height: 1, 
+          <div style={{
+            position: "fixed",
+            bottom: 0,
+            right: 0,
+            width: 1,
+            height: 1,
             overflow: "hidden",
             zIndex: -1,
             pointerEvents: "none"
           }}>
-            <VideoEngagementAnalyzer 
+            <VideoEngagementAnalyzer
               onScoreUpdate={setCurrentFocusScore}
               isActive={isRunning}
             />
@@ -133,8 +133,8 @@ const StudyPage: FC = () => {
         {/* === Widgets === */}
         <div
           className={cn(
-            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px]",
-            "flex flex-col items-center justify-between gap-8"
+            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[900px] px-4",
+            "flex flex-col items-center justify-between gap-4 md:gap-8"
           )}
         >
           {/* Live Score (mini) */}
@@ -176,7 +176,7 @@ const StudyPage: FC = () => {
             setIsRunning={setIsRunning}
           />
 
-          <div className="flex gap-6 w-full h-80 justify-between">
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full h-auto md:h-80 justify-between pb-16 md:pb-0">
             {/* Widget 2: Task List */}
             <TaskListWidget
               show={showTasks}
@@ -184,7 +184,7 @@ const StudyPage: FC = () => {
             />
 
             {/* Widget 3: Chart */}
-            <FocusChartWidget 
+            <FocusChartWidget
               isRunning={isRunning}
               currentFocusScore={Math.max(0, Math.min(100, currentFocusScore))}
             />

@@ -134,13 +134,16 @@ export default function NavSidebar({
 		<TooltipProvider>
 			<nav
 				className={cn(
-					"absolute left-2 top-15 flex flex-col gap-2 p-2 z-30",
+					// Mobile: bottom horizontal bar
+					"fixed bottom-0 left-0 right-0 flex flex-row justify-around p-2 z-30",
+					// Desktop: vertical sidebar
+					"md:absolute md:left-2 md:top-15 md:bottom-auto md:right-auto md:flex-col md:gap-2 md:p-2 md:justify-start",
 					glassEffect,
 					// MỚI: Thêm hiệu ứng ẩn/hiện
 					"transition-all duration-300 ease-in-out",
 					isUiVisible
-						? "opacity-100 translate-x-0"
-						: "opacity-0 -translate-x-full"
+						? "opacity-100 translate-y-0 md:translate-x-0"
+						: "opacity-0 translate-y-full md:translate-y-0 md:-translate-x-full"
 				)}
 			>
 				{/* --- CẬP NHẬT: Dùng .map() để render --- */}

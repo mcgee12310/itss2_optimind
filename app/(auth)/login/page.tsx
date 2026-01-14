@@ -196,9 +196,9 @@ export default function LoginPage() {
 							<Button
 								variant="outline"
 								// THAY ĐỔS: Nền trắng, chữ đen
-								className="w-full text-base h-11 bg-white hover:bg-gray-200 text-gray-800" // THAY ĐỔI: h-11
-								onClick={() => {}}
-								// disabled={loading}
+								className="w-full text-base h-11 bg-white hover:bg-gray-300 text-gray-800" // THAY ĐỔI: h-11
+								onClick={() => window.location.href = "/api/auth/google"}
+							// disabled={loading}
 							>
 								<Chrome className="w-5 h-5 mr-2" /> Google
 							</Button>
