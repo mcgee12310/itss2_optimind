@@ -381,7 +381,7 @@
 
 "use client";
 
-import { useState, useEffect, FC } from "react";
+import { useState, useEffect, FC, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -391,7 +391,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { cacheUtils } from "@/hooks/useCachedData";
 import { Users, Lock, LogIn, Plus } from "lucide-react";
 
 // --- Định nghĩa Types ---
@@ -408,11 +410,16 @@ export interface Room {
 
 export type RoomType = Room;
 
+const CACHE_KEY = "rooms_list";
+
 // --- Component Chính ---
 const StudyRoomPage: FC = () => {
     const router = useRouter();
-    const [rooms, setRooms] = useState<Room[]>([]);
-    const [loading, setLoading] = useState(true);
+    // Initialize from cache
+    const cachedRooms = cacheUtils.get<Room[]>(CACHE_KEY);
+
+    const [rooms, setRooms] = useState<Room[]>(cachedRooms || []);
+    const [loading, setLoading] = useState(!cachedRooms);
     const [isCreatingRoom, setIsCreatingRoom] = useState(false);
     const [newRoomName, setNewRoomName] = useState("");
     const [newRoomType, setNewRoomType] = useState<"STUDY" | "BATTLE">("STUDY");
@@ -427,11 +434,12 @@ const StudyRoomPage: FC = () => {
 
     const fetchRooms = async () => {
         try {
-            setLoading(true);
             const res = await fetch("/api/rooms");
             if (res.ok) {
                 const data = await res.json();
                 setRooms(data.rooms);
+                // Cache the rooms
+                cacheUtils.set(CACHE_KEY, data.rooms);
             }
         } catch (error) {
             console.error("Failed to fetch rooms:", error);
@@ -510,173 +518,174 @@ const StudyRoomPage: FC = () => {
 
     return (
         <TooltipProvider>
-            <main className="h-screen w-screen text-white p-6 transition-all duration-500 overflow-y-auto">
-                <div className="max-w-6xl mx-auto space-y-6">
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-white">Phòng Học</h1>
-                            <p className="text-gray-300 font-medium">Học tập cùng mọi người</p>
-                        </div>
-                        <Dialog open={isCreatingRoom} onOpenChange={setIsCreatingRoom}>
-                            <DialogTrigger asChild>
-                                <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg">
-                                    <Plus className="w-4 h-4" /> Tạo Phòng Mới
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className={cn(glassEffect, "text-white border-white/30")}>
-                                <DialogHeader>
-                                    <DialogTitle className="text-xl text-white">Tạo Phòng Học Mới</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 pt-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Tên Phòng</Label>
-                                        <Input
-                                            value={newRoomName}
-                                            onChange={(e) => setNewRoomName(e.target.value)}
-                                            placeholder="Nhập tên phòng"
-                                            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-indigo-500"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Loại Phòng</Label>
-                                        <select
-                                            value={newRoomType}
-                                            onChange={(e) => setNewRoomType(e.target.value as "STUDY" | "BATTLE")}
-                                            className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white outline-none focus:ring-2 focus:ring-indigo-500"
-                                        >
-                                            <option value="STUDY" className="bg-slate-900">Phòng Học Tập</option>
-                                            <option value="BATTLE" className="bg-slate-900">Phòng Thi Đấu</option>
-                                        </select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Số Thành Viên Tối Đa</Label>
-                                        <Input
-                                            type="number"
-                                            min="2"
-                                            max="10"
-                                            value={newRoomMax}
-                                            onChange={(e) => setNewRoomMax(parseInt(e.target.value))}
-                                            className="bg-white/10 border-white/20 text-white focus:border-indigo-500"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Mật Khẩu (Tùy Chọn)</Label>
-                                        <Input
-                                            type="password"
-                                            value={newRoomPassword}
-                                            onChange={(e) => setNewRoomPassword(e.target.value)}
-                                            placeholder="Để trống nếu không cần"
-                                            className="bg-white/10 border-white/20 text-white focus:border-indigo-500"
-                                        />
-                                    </div>
-                                    <Button onClick={handleCreateRoom} className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2 shadow-md">
-                                        Tạo Phòng
-                                    </Button>
+            <main className="h-screen w-screen text-white p-6">
+                <div className="relative w-full h-full">
+                    <div className={cn(
+                        "absolute top-20 bottom-6 left-24 right-24 flex flex-col overflow-hidden",
+                        glassEffect
+                    )}>
+                        <ScrollArea className="h-full w-full p-6">
+                            {/* Header */}
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h1 className="text-3xl font-bold tracking-tight text-white">Phòng Học</h1>
+                                    <p className="text-gray-300 font-medium">Học tập cùng mọi người</p>
                                 </div>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-
-                    {/* Rooms Grid */}
-                    {loading ? (
-                        <div className="flex justify-center items-center py-20">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-                        </div>
-                    ) : rooms.length === 0 ? (
-                        <Card className={cn(glassEffect, "border-dashed")}>
-                            <CardContent className="py-16 text-center">
-                                <Users className="w-16 h-16 mx-auto text-white/20 mb-4" />
-                                <p className="text-gray-300 text-lg">Chưa có phòng học nào hoạt động.</p>
-                                <p className="text-gray-400">Hãy là người đầu tiên tạo phòng!</p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {rooms.map((room) => (
-                                <Card key={room.id} className={cn(glassEffect, "group hover:bg-black/50 transition-all duration-300 border-white/10 hover:border-indigo-500/50")}>
-                                    <CardHeader className="pb-2">
-                                        <div className="flex items-start justify-between">
-                                            <CardTitle className="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors">
-                                                {room.name}
-                                            </CardTitle>
-                                            {room.isPrivate ? (
-                                                <Badge variant="outline" className="border-amber-500/50 text-amber-500 bg-amber-500/10">
-                                                    <Lock className="w-3 h-3 mr-1" /> Khóa
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline" className="border-emerald-500/50 text-emerald-400 bg-emerald-500/10">
-                                                    Công khai
-                                                </Badge>
-                                            )}
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-3">
-                                            <div className="flex items-center text-white/90">
-                                                <Users className="w-4 h-4 mr-3 text-indigo-400" />
-                                                <span className="text-sm font-semibold">
-                                                    {room.members?.length || 0} <span className="text-white/60 font-normal">/</span> {room.maxMembers} thành viên
-                                                </span>
+                                <Dialog open={isCreatingRoom} onOpenChange={setIsCreatingRoom}>
+                                    <DialogTrigger asChild>
+                                        <Button className="gap-2 bg-indigo-600 hover:bg-indigo-700 text-white border-none shadow-lg">
+                                            <Plus className="w-4 h-4" /> Tạo Phòng Mới
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className={cn(glassEffect, "text-white border-white/30")}>
+                                        <DialogHeader>
+                                            <DialogTitle className="text-xl text-white">Tạo Phòng Học Mới</DialogTitle>
+                                        </DialogHeader>
+                                        <div className="space-y-4 pt-4">
+                                            <div className="space-y-2">
+                                                <Label className="text-white">Tên Phòng</Label>
+                                                <Input
+                                                    value={newRoomName}
+                                                    onChange={(e) => setNewRoomName(e.target.value)}
+                                                    placeholder="Nhập tên phòng"
+                                                    className="bg-white/10 border-white/20 text-white placeholder:text-gray-400 focus:border-indigo-500"
+                                                />
                                             </div>
-                                            {/* <div className="flex items-center text-white/90">
-                                                <div className="w-4 h-4 mr-3 flex items-center justify-center">
-                                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-400"></div>
-                                                </div>
-
-                                            </div> */}
-                                        </div>
-
-                                        <Dialog open={joinRoomId === room.id} onOpenChange={(open) => {
-                                            if (!open) setJoinRoomId(null);
-                                        }}>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    onClick={() => setJoinRoomId(room.id)}
-                                                    disabled={(room.members?.length || 0) >= room.maxMembers}
-                                                    className={cn(
-                                                        "w-full gap-2 font-bold shadow-md transition-all",
-                                                        (room.members?.length || 0) >= room.maxMembers 
-                                                        ? "bg-white/5 text-white/20" 
-                                                        : "bg-white text-black hover:bg-indigo-500 hover:text-white"
-                                                    )}
+                                            <div className="space-y-2">
+                                                <Label className="text-white">Loại Phòng</Label>
+                                                <select
+                                                    value={newRoomType}
+                                                    onChange={(e) => setNewRoomType(e.target.value as "STUDY" | "BATTLE")}
+                                                    className="w-full px-3 py-2 bg-white/10 border border-white/20 rounded-lg text-white outline-none focus:ring-2 focus:ring-indigo-500"
                                                 >
-                                                    <LogIn className="w-4 h-4" /> 
-                                                    {(room.members?.length || 0) >= room.maxMembers ? "Phòng Đầy" : "Tham Gia Ngay"}
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className={cn(glassEffect, "text-white border-white/30")}>
-                                                <DialogHeader>
-                                                    <DialogTitle className="text-white">Tham Gia Phòng: {room.name}</DialogTitle>
-                                                </DialogHeader>
-                                                <div className="space-y-4 pt-4">
-                                                    {room.isPrivate && (
-                                                        <div className="space-y-2">
-                                                            <Label className="text-white">Mật Khẩu Truy Cập</Label>
-                                                            <Input
-                                                                type="password"
-                                                                value={joinPassword}
-                                                                onChange={(e) => setJoinPassword(e.target.value)}
-                                                                placeholder="Nhập mật khẩu phòng"
-                                                                className="bg-white/10 border-white/20 text-white focus:border-indigo-500"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    <Button
-                                                        onClick={() => handleJoinRoom(room.id)}
-                                                        className="w-full bg-indigo-600 hover:bg-indigo-700"
-                                                    >
-                                                        Xác Nhận Tham Gia
-                                                    </Button>
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
+                                                    <option value="STUDY" className="bg-slate-900">Phòng Học Tập</option>
+                                                    <option value="BATTLE" className="bg-slate-900">Phòng Thi Đấu</option>
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-white">Số Thành Viên Tối Đa</Label>
+                                                <Input
+                                                    type="number"
+                                                    min="2"
+                                                    max="10"
+                                                    value={newRoomMax}
+                                                    onChange={(e) => setNewRoomMax(parseInt(e.target.value))}
+                                                    className="bg-white/10 border-white/20 text-white focus:border-indigo-500"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label className="text-white">Mật Khẩu (Tùy Chọn)</Label>
+                                                <Input
+                                                    type="password"
+                                                    value={newRoomPassword}
+                                                    onChange={(e) => setNewRoomPassword(e.target.value)}
+                                                    placeholder="Để trống nếu không cần"
+                                                    className="bg-white/10 border-white/20 text-white focus:border-indigo-500"
+                                                />
+                                            </div>
+                                            <Button onClick={handleCreateRoom} className="w-full bg-indigo-600 hover:bg-indigo-700 mt-2 shadow-md">
+                                                Tạo Phòng
+                                            </Button>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+
+                            {/* Rooms Grid */}
+                            {loading ? (
+                                <div className="flex justify-center items-center py-20">
+                                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                                </div>
+                            ) : rooms.length === 0 ? (
+                                <Card className={cn("bg-white/5 border-dashed border-white/20")}>
+                                    <CardContent className="py-16 text-center">
+                                        <Users className="w-16 h-16 mx-auto text-white/20 mb-4" />
+                                        <p className="text-gray-300 text-lg">Chưa có phòng học nào hoạt động.</p>
+                                        <p className="text-gray-400">Hãy là người đầu tiên tạo phòng!</p>
                                     </CardContent>
                                 </Card>
-                            ))}
-                        </div>
-                    )}
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {rooms.map((room) => (
+                                        <Card key={room.id} className={cn("bg-white/5 border-white/10 group hover:bg-white/10 transition-all duration-300 hover:border-indigo-500/50")}>
+                                            <CardHeader className="pb-2">
+                                                <div className="flex items-start justify-between">
+                                                    <CardTitle className="text-xl font-bold text-white group-hover:text-indigo-400 transition-colors">
+                                                        {room.name}
+                                                    </CardTitle>
+                                                    {room.isPrivate ? (
+                                                        <Badge variant="outline" className="border-amber-500/50 text-amber-500 bg-amber-500/10">
+                                                            <Lock className="w-3 h-3 mr-1" /> Khóa
+                                                        </Badge>
+                                                    ) : (
+                                                        <Badge variant="outline" className="border-emerald-500/50 text-emerald-400 bg-emerald-500/10">
+                                                            Công khai
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="space-y-6">
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center text-white/90">
+                                                        <Users className="w-4 h-4 mr-3 text-indigo-400" />
+                                                        <span className="text-sm font-semibold">
+                                                            {room.members?.length || 0} <span className="text-white/60 font-normal">/</span> {room.maxMembers} thành viên
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                <Dialog open={joinRoomId === room.id} onOpenChange={(open) => {
+                                                    if (!open) setJoinRoomId(null);
+                                                }}>
+                                                    <DialogTrigger asChild>
+                                                        <Button
+                                                            onClick={() => setJoinRoomId(room.id)}
+                                                            disabled={(room.members?.length || 0) >= room.maxMembers}
+                                                            className={cn(
+                                                                "w-full gap-2 font-bold shadow-md transition-all",
+                                                                (room.members?.length || 0) >= room.maxMembers
+                                                                    ? "bg-white/5 text-white/20"
+                                                                    : "bg-white text-black hover:bg-indigo-500 hover:text-white"
+                                                            )}
+                                                        >
+                                                            <LogIn className="w-4 h-4" />
+                                                            {(room.members?.length || 0) >= room.maxMembers ? "Phòng Đầy" : "Tham Gia Ngay"}
+                                                        </Button>
+                                                    </DialogTrigger>
+                                                    <DialogContent className={cn(glassEffect, "text-white border-white/30")}>
+                                                        <DialogHeader>
+                                                            <DialogTitle className="text-white">Tham Gia Phòng: {room.name}</DialogTitle>
+                                                        </DialogHeader>
+                                                        <div className="space-y-4 pt-4">
+                                                            {room.isPrivate && (
+                                                                <div className="space-y-2">
+                                                                    <Label className="text-white">Mật Khẩu Truy Cập</Label>
+                                                                    <Input
+                                                                        type="password"
+                                                                        value={joinPassword}
+                                                                        onChange={(e) => setJoinPassword(e.target.value)}
+                                                                        placeholder="Nhập mật khẩu phòng"
+                                                                        className="bg-white/10 border-white/20 text-white focus:border-indigo-500"
+                                                                        autoFocus
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <Button
+                                                                onClick={() => handleJoinRoom(room.id)}
+                                                                className="w-full bg-indigo-600 hover:bg-indigo-700"
+                                                            >
+                                                                Xác Nhận Tham Gia
+                                                            </Button>
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                </div>
+                            )}
+                        </ScrollArea>
+                    </div>
                 </div>
             </main>
         </TooltipProvider>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import { Toaster } from "@/components/ui/sonner";
+import MusicWrapper from "@/components/app/MusicWrapper";
 
 export const metadata: Metadata = {
 	title: "Optimind - Deep Work with AI",
@@ -21,9 +22,9 @@ export default function RootLayout({
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body className={`antialiased`} suppressHydrationWarning>
-				{/* <AuthProvider> */}
-				{children}
-				{/* </AuthProvider> */}
+				<MusicWrapper>
+					{children}
+				</MusicWrapper>
 				<Toaster position="top-right" richColors />
 			</body>
 		</html>

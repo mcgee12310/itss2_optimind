@@ -1,9 +1,10 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cacheUtils } from "@/hooks/useCachedData";
 import {
   Pet,
   ShopItem,
@@ -16,47 +17,60 @@ import {
   GameSection,
 } from "@/components/gamification";
 
+interface GamificationCache {
+  pet: Pet | null;
+  shopItems: ShopItem[];
+  inventory: InventoryItem[];
+  userCoins: number;
+  gamePlays: number;
+}
+
+const CACHE_KEY = "gamification_data";
+
 export default function GamificationPage() {
-  const [pet, setPet] = useState<Pet | null>(null);
-  const [shopItems, setShopItems] = useState<ShopItem[]>([]);
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [userCoins, setUserCoins] = useState(0);
-  const [gamePlays, setGamePlays] = useState(0);
-  const [loading, setLoading] = useState(true);
+  // Initialize from cache for instant loading
+  const cached = cacheUtils.get<GamificationCache>(CACHE_KEY);
+
+  const [pet, setPet] = useState<Pet | null>(cached?.pet || null);
+  const [shopItems, setShopItems] = useState<ShopItem[]>(cached?.shopItems || []);
+  const [inventory, setInventory] = useState<InventoryItem[]>(cached?.inventory || []);
+  const [userCoins, setUserCoins] = useState(cached?.userCoins || 0);
+  const [gamePlays, setGamePlays] = useState(cached?.gamePlays || 0);
+  const [loading, setLoading] = useState(!cached);
   const [activeTab, setActiveTab] = useState("pet");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
-
       // Fetch pet
       const petRes = await fetch("/api/gamification/pet");
+      let newPet = null;
       if (petRes.ok) {
         const petData = await petRes.json();
-        setPet(petData.pet);
+        newPet = petData.pet;
+        setPet(newPet);
       }
 
       // Fetch shop items
       const shopRes = await fetch("/api/gamification/shop");
+      let newShopItems: ShopItem[] = [];
       if (shopRes.ok) {
         const shopData = await shopRes.json();
-        setShopItems(shopData.items);
+        newShopItems = shopData.items;
+        setShopItems(newShopItems);
       }
 
       // Fetch inventory
       const inventoryRes = await fetch("/api/gamification/inventory");
+      let newInventory: InventoryItem[] = [];
+      let newGamePlays = 0;
       if (inventoryRes.ok) {
         const invData = await inventoryRes.json();
-        setInventory(invData.inventory);
-        // Calculate game plays
-        const totalGamePlays = invData.inventory
+        newInventory = invData.inventory;
+        setInventory(newInventory);
+        newGamePlays = newInventory
           .filter((item: InventoryItem) => item.item.type === 'game_play')
           .reduce((sum: number, item: InventoryItem) => sum + item.quantity, 0);
-        setGamePlays(totalGamePlays);
+        setGamePlays(newGamePlays);
       } else {
         setInventory([]);
         setGamePlays(0);
@@ -64,16 +78,31 @@ export default function GamificationPage() {
 
       // Fetch current user coins
       const userRes = await fetch("/api/auth/me");
+      let newCoins = 0;
       if (userRes.ok) {
         const userData = await userRes.json();
-        setUserCoins(userData.user.coins);
+        newCoins = userData.user.coins;
+        setUserCoins(newCoins);
       }
+
+      // Cache all data
+      cacheUtils.set<GamificationCache>(CACHE_KEY, {
+        pet: newPet,
+        shopItems: newShopItems,
+        inventory: newInventory,
+        userCoins: newCoins,
+        gamePlays: newGamePlays,
+      });
     } catch (error) {
       console.error("Failed to fetch gamification data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handlePetInteract = async (action: PetAction) => {
     try {
@@ -147,19 +176,11 @@ export default function GamificationPage() {
     return <div className="flex items-center justify-center h-screen">Loading...</div>;
   }
 
-  const glassEffect = "bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg";
+  const glassEffect = "bg-black/40 backdrop-blur-md border border-white/20 rounded-xl shadow-lg";
   const cardStyle = "bg-gradient-to-br from-gray-600/70 to-gray-700/70 backdrop-blur-md border-gray-500/30 text-white shadow-xl";
 
   return (
-    <main className="h-screen w-screen text-white p-6 transition-all duration-500">
-      <div
-        className="absolute inset-0 w-full h-full"
-        style={{
-          backgroundImage: `url(https://images.unsplash.com/photo-1542662565-7e4b66bae529?q=80&w=2070&auto=format&fit=crop)`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+    <main className="h-screen w-screen text-white p-6">
       <div className="relative w-full h-full">
         <div className={cn(
           "absolute top-20 bottom-6 left-24 right-24 flex flex-col overflow-hidden",

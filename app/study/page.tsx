@@ -109,7 +109,7 @@ const StudyPage: FC = () => {
   }, [isRunning]);
 
   return (
-    <main className="h-screen w-screen text-white p-6 transition-all duration-500 overflow-hidden">
+    <main className="h-screen w-screen text-white p-6 overflow-hidden">
       <div className="relative w-full h-full">
         {/* === AI Camera Analysis (Hidden but active) === */}
         {isRunning && (

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award, Crown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { cacheUtils } from "@/hooks/useCachedData";
 
 // Glass effect styles
 const glassCard = "bg-black/40 backdrop-blur-md border border-white/20 rounded-2xl shadow-xl";
@@ -23,12 +24,23 @@ interface LeaderboardUser {
   studyHours?: number;
 }
 
+interface RankingCache {
+  global: LeaderboardUser[];
+  friends: LeaderboardUser[];
+  currentUser: any;
+}
+
+const CACHE_KEY = "ranking_data";
+
 export default function RankingPage() {
+  // Initialize from cache
+  const cached = cacheUtils.get<RankingCache>(CACHE_KEY);
+
   const [activeTab, setActiveTab] = useState<"global" | "friends">("global");
-  const [globalLeaderboard, setGlobalLeaderboard] = useState<LeaderboardUser[]>([]);
-  const [friendsLeaderboard, setFriendsLeaderboard] = useState<LeaderboardUser[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [globalLeaderboard, setGlobalLeaderboard] = useState<LeaderboardUser[]>(cached?.global || []);
+  const [friendsLeaderboard, setFriendsLeaderboard] = useState<LeaderboardUser[]>(cached?.friends || []);
+  const [loading, setLoading] = useState(!cached);
+  const [currentUser, setCurrentUser] = useState<any>(cached?.currentUser || null);
 
   useEffect(() => {
     fetchData();
@@ -38,24 +50,37 @@ export default function RankingPage() {
     try {
       // Fetch current user
       const userRes = await fetch("/api/auth/me");
+      let newCurrentUser = null;
       if (userRes.ok) {
         const userData = await userRes.json();
-        setCurrentUser(userData.user);
+        newCurrentUser = userData.user;
+        setCurrentUser(newCurrentUser);
       }
 
       // Fetch global leaderboard
       const globalRes = await fetch("/api/leaderboards?type=global&limit=50");
+      let newGlobal: LeaderboardUser[] = [];
       if (globalRes.ok) {
         const globalData = await globalRes.json();
-        setGlobalLeaderboard(globalData.leaderboard);
+        newGlobal = globalData.leaderboard;
+        setGlobalLeaderboard(newGlobal);
       }
 
       // Fetch friends leaderboard
       const friendsRes = await fetch("/api/leaderboards?type=friends&limit=50");
+      let newFriends: LeaderboardUser[] = [];
       if (friendsRes.ok) {
         const friendsData = await friendsRes.json();
-        setFriendsLeaderboard(friendsData.leaderboard);
+        newFriends = friendsData.leaderboard;
+        setFriendsLeaderboard(newFriends);
       }
+
+      // Cache all data
+      cacheUtils.set<RankingCache>(CACHE_KEY, {
+        global: newGlobal,
+        friends: newFriends,
+        currentUser: newCurrentUser,
+      });
     } catch (error) {
       console.error("Failed to fetch leaderboard:", error);
     } finally {
@@ -88,7 +113,7 @@ export default function RankingPage() {
   const leaderboard = activeTab === "global" ? globalLeaderboard : friendsLeaderboard;
 
   return (
-    <main className="h-screen w-screen text-white p-6 transition-all duration-500">
+    <main className="h-screen w-screen text-white p-6">
       <div className="relative w-full h-full">
         <div className="absolute top-20 bottom-6 left-24 right-24 flex gap-4">
           {/* LEFT PANEL - User Stats & Tabs */}
@@ -162,7 +187,7 @@ export default function RankingPage() {
 
             {/* Tab Info */}
             <div className="text-xs text-white/50 text-center">
-              {activeTab === "global" 
+              {activeTab === "global"
                 ? "Xem xếp hạng toàn cầu của tất cả người dùng"
                 : "So sánh thành tích với bạn bè của bạn"}
             </div>

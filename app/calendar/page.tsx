@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, FC } from "react";
+import { useState, useEffect, FC, useCallback } from "react";
+import { cacheUtils } from "@/hooks/useCachedData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
@@ -82,15 +83,23 @@ const defaultTaskValues: Omit<Task, "id" | "completed"> = {
   priority: "medium",
 };
 
-const TaskCalendar: FC = () => {
-  // === State quản lý giao diện ===
+const CACHE_KEY = "calendar_tasks";
 
-  const [loading, setLoading] = useState(true);
-  
+const TaskCalendar: FC = () => {
+  // Initialize from cache for instant loading
+  const cachedTasks = cacheUtils.get<Task[]>(CACHE_KEY);
+
+  const [loading, setLoading] = useState(!cachedTasks);
+
   // === State cho Lịch & Task ===
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(cachedTasks || []);
   const [date, setDate] = useState<Date | undefined>(today);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(() => {
+    if (cachedTasks) {
+      return cachedTasks.find((t) => t.date === todayString) || null;
+    }
+    return null;
+  });
 
   // === State cho Filter Tag (Mới thêm) ===
   // Mặc định chọn tất cả các tag
@@ -102,69 +111,70 @@ const TaskCalendar: FC = () => {
   const [formData, setFormData] = useState(defaultTaskValues);
 
   // Fetch tasks from API
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("/api/tasks");
-        if (!response.ok) throw new Error("Failed to fetch tasks");
-        const data = await response.json();
-        
-        const apiTasks = data.tasks || data;
+  const fetchTasks = useCallback(async () => {
+    try {
+      const response = await fetch("/api/tasks");
+      if (!response.ok) throw new Error("Failed to fetch tasks");
+      const data = await response.json();
 
-        const formattedTasks: Task[] = apiTasks.map((task: any) => {
-          let timeDisplay = "09:00 - 10:00"; 
-          if (task.timeSlot) {
-             timeDisplay = task.timeSlot;
-          } else if (task.startTime && task.endTime) {
-             const start = new Date(task.startTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-             const end = new Date(task.endTime).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'});
-             timeDisplay = `${start} - ${end}`;
-          }
+      const apiTasks = data.tasks || data;
 
-          let tagName = "Học tập";
-          try {
-            if (Array.isArray(task.tags) && task.tags.length > 0) {
-               tagName = task.tags[0]; 
-            } else if (typeof task.tags === 'string') {
-               if(task.tags.startsWith("[")) {
-                  const parsed = JSON.parse(task.tags);
-                  tagName = parsed[0];
-               } else {
-                  tagName = task.tags;
-               }
+      const formattedTasks: Task[] = apiTasks.map((task: any) => {
+        let timeDisplay = "09:00 - 10:00";
+        if (task.timeSlot) {
+          timeDisplay = task.timeSlot;
+        } else if (task.startTime && task.endTime) {
+          const start = new Date(task.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          const end = new Date(task.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+          timeDisplay = `${start} - ${end}`;
+        }
+
+        let tagName = "Học tập";
+        try {
+          if (Array.isArray(task.tags) && task.tags.length > 0) {
+            tagName = task.tags[0];
+          } else if (typeof task.tags === 'string') {
+            if (task.tags.startsWith("[")) {
+              const parsed = JSON.parse(task.tags);
+              tagName = parsed[0];
+            } else {
+              tagName = task.tags;
             }
-          } catch (e) {
-             console.error("Tag parse error", e);
           }
-          
-          const foundTag = Object.values(taskTags).find(t => t.name === tagName) || taskTags.study;
+        } catch (e) {
+          console.error("Tag parse error", e);
+        }
 
-          return {
-            id: task.id,
-            title: task.title,
-            date: task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : todayString,
-            time: timeDisplay,
-            tag: foundTag,
-            description: task.description || "",
-            completed: task.status === "completed",
-            priority: (task.priority as Priority) || "medium",
-          };
-        });
-        
-        setTasks(formattedTasks);
-        
-        const firstTask = formattedTasks.find((t) => t.date === todayString) || null;
-        setSelectedTask(firstTask);
-      } catch (err) {
-        console.error("Failed to fetch tasks:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+        const foundTag = Object.values(taskTags).find(t => t.name === tagName) || taskTags.study;
 
-    fetchTasks();
+        return {
+          id: task.id,
+          title: task.title,
+          date: task.dueDate ? format(new Date(task.dueDate), "yyyy-MM-dd") : todayString,
+          time: timeDisplay,
+          tag: foundTag,
+          description: task.description || "",
+          completed: task.status === "completed",
+          priority: (task.priority as Priority) || "medium",
+        };
+      });
+
+      setTasks(formattedTasks);
+      // Cache the tasks
+      cacheUtils.set(CACHE_KEY, formattedTasks);
+
+      const firstTask = formattedTasks.find((t) => t.date === todayString) || null;
+      setSelectedTask(firstTask);
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
 
   // --- Logic Lọc Task (Sửa lỗi) ---
   const selectedDateString = date ? format(date, "yyyy-MM-dd") : "";
@@ -173,14 +183,14 @@ const TaskCalendar: FC = () => {
     const isSameDate = task.date === selectedDateString;
     // 2. Lọc theo tag
     const isTagSelected = selectedTags.includes(task.tag.name);
-    
+
     return isSameDate && isTagSelected;
   });
 
   // --- Handlers Filter Tag ---
   const toggleTag = (tagName: string) => {
-    setSelectedTags(prev => 
-      prev.includes(tagName) 
+    setSelectedTags(prev =>
+      prev.includes(tagName)
         ? prev.filter(t => t !== tagName) // Bỏ chọn
         : [...prev, tagName] // Chọn thêm
     );
@@ -198,7 +208,7 @@ const TaskCalendar: FC = () => {
 
   // Style Glassmorphism
   const glassEffect =
-    "bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-lg";
+    "bg-black/40 backdrop-blur-md border border-white/20 rounded-xl shadow-lg";
 
   const formattedDateHeader = date
     ? new Intl.DateTimeFormat("vi-VN", { dateStyle: "full" }).format(date)
@@ -250,7 +260,7 @@ const TaskCalendar: FC = () => {
       )
     );
     if (selectedTask?.id === taskId) {
-        setSelectedTask((prev) => (prev ? { ...prev, completed: newCompletedState } : null));
+      setSelectedTask((prev) => (prev ? { ...prev, completed: newCompletedState } : null));
     }
 
     try {
@@ -276,7 +286,7 @@ const TaskCalendar: FC = () => {
   };
 
   const handleDeleteTask = async (taskId: string) => {
-    if(!confirm("Bạn có chắc chắn muốn xóa công việc này không?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa công việc này không?")) return;
 
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
@@ -298,13 +308,13 @@ const TaskCalendar: FC = () => {
     if (!formData.title) return;
 
     const payload = {
-        title: formData.title,
-        description: formData.description,
-        dueDate: formData.date ? new Date(formData.date).toISOString() : undefined,
-        timeSlot: formData.time,
-        priority: formData.priority,
-        tags: [formData.tag.name],
-        status: "todo",
+      title: formData.title,
+      description: formData.description,
+      dueDate: formData.date ? new Date(formData.date).toISOString() : undefined,
+      timeSlot: formData.time,
+      priority: formData.priority,
+      tags: [formData.tag.name],
+      status: "todo",
     };
 
     try {
@@ -365,18 +375,18 @@ const TaskCalendar: FC = () => {
 
   const getPriorityColor = (p: Priority) => {
     switch (p) {
-        case "high": return "text-red-400 border-red-400 bg-red-400/10";
-        case "low": return "text-green-400 border-green-400 bg-green-400/10";
-        default: return "text-yellow-400 border-yellow-400 bg-yellow-400/10";
+      case "high": return "text-red-400 border-red-400 bg-red-400/10";
+      case "low": return "text-green-400 border-green-400 bg-green-400/10";
+      default: return "text-yellow-400 border-yellow-400 bg-yellow-400/10";
     }
   }
 
   return (
-    <main className="h-screen w-screen text-white p-6 transition-all duration-500">
+    <main className="h-screen w-screen text-white p-6">
       <div className="relative w-full h-full">
         <div
           className={cn(
-            "absolute top-20 bottom-6 left-24 right-24", 
+            "absolute top-20 bottom-6 left-24 right-24",
             "flex divide-x divide-white/20",
             glassEffect
           )}
@@ -389,7 +399,7 @@ const TaskCalendar: FC = () => {
             >
               <Plus size={18} className="mr-2" /> Thêm công việc
             </Button>
-            
+
             <div className="mt-2">
               <h3 className="font-semibold mb-2">Lịch</h3>
               <Calendar
@@ -411,8 +421,8 @@ const TaskCalendar: FC = () => {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="tag-all"
-                    checked={isAllTagsSelected} 
-                    onCheckedChange={toggleAllTags} 
+                    checked={isAllTagsSelected}
+                    onCheckedChange={toggleAllTags}
                     className="border-white/50 data-[state=checked]:bg-white data-[state=checked]:text-black"
                   />
                   <Label htmlFor="tag-all" className="text-sm cursor-pointer">
@@ -487,12 +497,12 @@ const TaskCalendar: FC = () => {
                           {task.title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-white/70">
-                                {task.time}
-                            </span>
-                            <span className={cn("text-[10px] px-1.5 py-0.5 rounded border uppercase", getPriorityColor(task.priority))}>
-                                {task.priority}
-                            </span>
+                          <span className="text-xs text-white/70">
+                            {task.time}
+                          </span>
+                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded border uppercase", getPriorityColor(task.priority))}>
+                            {task.priority}
+                          </span>
                         </div>
                       </div>
                       <span
@@ -529,7 +539,7 @@ const TaskCalendar: FC = () => {
                     <X size={20} />
                   </Button>
                 </div>
-                
+
                 <h3 className="text-2xl font-semibold">{selectedTask.title}</h3>
 
                 <div className="flex items-center gap-2 text-white/80">
@@ -550,10 +560,10 @@ const TaskCalendar: FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Flag size={16} className="text-white/80" />
-                    <span className={cn("text-sm font-medium px-3 py-1 rounded-full border uppercase", getPriorityColor(selectedTask.priority))}>
-                        {selectedTask.priority === 'high' ? 'Cao' : selectedTask.priority === 'low' ? 'Thấp' : 'Trung bình'}
-                    </span>
+                  <Flag size={16} className="text-white/80" />
+                  <span className={cn("text-sm font-medium px-3 py-1 rounded-full border uppercase", getPriorityColor(selectedTask.priority))}>
+                    {selectedTask.priority === 'high' ? 'Cao' : selectedTask.priority === 'low' ? 'Thấp' : 'Trung bình'}
+                  </span>
                 </div>
 
                 <div>
@@ -573,18 +583,18 @@ const TaskCalendar: FC = () => {
                     {selectedTask.completed ? "Đánh dấu Chưa làm" : "Hoàn thành"}
                   </Button>
                   <Button
-                      variant="outline"
-                      className="bg-transparent hover:bg-white/20 text-white"
-                      onClick={() => handleOpenEditDialog(selectedTask)}
+                    variant="outline"
+                    className="bg-transparent hover:bg-white/20 text-white"
+                    onClick={() => handleOpenEditDialog(selectedTask)}
                   >
-                      <Pencil size={16} />
+                    <Pencil size={16} />
                   </Button>
                   <Button
-                      variant="destructive"
-                      className="bg-red-600/80 hover:bg-red-600"
-                      onClick={() => handleDeleteTask(selectedTask.id)}
+                    variant="destructive"
+                    className="bg-red-600/80 hover:bg-red-600"
+                    onClick={() => handleDeleteTask(selectedTask.id)}
                   >
-                      <Trash2 size={16} />
+                    <Trash2 size={16} />
                   </Button>
                 </div>
               </div>
@@ -615,90 +625,90 @@ const TaskCalendar: FC = () => {
                   placeholder="Ví dụ: Hoàn thành Báo cáo"
                 />
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                    <Label className="text-white">Ngày</Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button
-                                variant={"outline"}
-                                className={cn(
-                                    "w-full justify-start text-left font-normal bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white",
-                                    !formData.date && "text-gray-300"
-                                )}
-                            >
-                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                {formData.date ? (
-                                    format(new Date(formData.date), "dd/MM/yyyy")
-                                ) : (
-                                    <span>Chọn ngày</span>
-                                )}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 bg-black/70 backdrop-blur-md border-white/20 text-white">
-                            <Calendar
-                                mode="single"
-                                selected={formData.date ? new Date(formData.date) : undefined}
-                                onSelect={(d) => handleFormChange("date", d ? format(d, 'yyyy-MM-dd') : '')}
-                                initialFocus
-                                className="text-white"
-                            />
-                        </PopoverContent>
-                    </Popover>
+                  <Label className="text-white">Ngày</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal bg-white/10 border-white/30 text-white hover:bg-white/20 hover:text-white",
+                          !formData.date && "text-gray-300"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.date ? (
+                          format(new Date(formData.date), "dd/MM/yyyy")
+                        ) : (
+                          <span>Chọn ngày</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-black/70 backdrop-blur-md border-white/20 text-white">
+                      <Calendar
+                        mode="single"
+                        selected={formData.date ? new Date(formData.date) : undefined}
+                        onSelect={(d) => handleFormChange("date", d ? format(d, 'yyyy-MM-dd') : '')}
+                        initialFocus
+                        className="text-white"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="grid gap-2">
-                    <Label className="text-white">Thời gian</Label>
-                    <Input 
-                        id="time"
-                        value={formData.time}
-                        onChange={(e) => handleFormChange("time", e.target.value)}
-                        className="bg-white/10 border-white/30 text-white placeholder:text-white/50"
-                        placeholder="09:00 - 10:00"
-                    />
+                  <Label className="text-white">Thời gian</Label>
+                  <Input
+                    id="time"
+                    value={formData.time}
+                    onChange={(e) => handleFormChange("time", e.target.value)}
+                    className="bg-white/10 border-white/30 text-white placeholder:text-white/50"
+                    placeholder="09:00 - 10:00"
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                    <Label className="text-white">Độ ưu tiên</Label>
-                    <Select
-                        value={formData.priority}
-                        onValueChange={(val) => handleFormChange("priority", val)}
-                    >
-                        <SelectTrigger className="bg-white/10 border-white/30 text-white">
-                            <SelectValue placeholder="Chọn độ ưu tiên" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black/70 backdrop-blur-md border-white/20 text-white">
-                            <SelectItem value="high">Cao</SelectItem>
-                            <SelectItem value="medium">Trung bình</SelectItem>
-                            <SelectItem value="low">Thấp</SelectItem>
-                        </SelectContent>
-                    </Select>
+                  <Label className="text-white">Độ ưu tiên</Label>
+                  <Select
+                    value={formData.priority}
+                    onValueChange={(val) => handleFormChange("priority", val)}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/30 text-white">
+                      <SelectValue placeholder="Chọn độ ưu tiên" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/70 backdrop-blur-md border-white/20 text-white">
+                      <SelectItem value="high">Cao</SelectItem>
+                      <SelectItem value="medium">Trung bình</SelectItem>
+                      <SelectItem value="low">Thấp</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="grid gap-2">
-                    <Label className="text-white">Tag</Label>
-                    <Select
+                  <Label className="text-white">Tag</Label>
+                  <Select
                     value={formData.tag.name}
                     onValueChange={(val) => {
-                        const key = Object.keys(taskTags).find(
+                      const key = Object.keys(taskTags).find(
                         (k) => taskTags[k].name === val
-                        );
-                        if (key) handleFormChange("tag", taskTags[key]);
+                      );
+                      if (key) handleFormChange("tag", taskTags[key]);
                     }}
-                    >
+                  >
                     <SelectTrigger className="bg-white/10 border-white/30 text-white">
-                        <SelectValue placeholder="Chọn tag" />
+                      <SelectValue placeholder="Chọn tag" />
                     </SelectTrigger>
                     <SelectContent className="bg-black/70 backdrop-blur-md border-white/20 text-white">
-                        {Object.values(taskTags).map((tag) => (
+                      {Object.values(taskTags).map((tag) => (
                         <SelectItem key={tag.name} value={tag.name}>
-                            {tag.name}
+                          {tag.name}
                         </SelectItem>
-                        ))}
+                      ))}
                     </SelectContent>
-                    </Select>
+                  </Select>
                 </div>
               </div>
 
@@ -716,7 +726,7 @@ const TaskCalendar: FC = () => {
             <DialogFooter>
               <DialogClose asChild>
                 <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="hover:bg-white/10 hover:text-white">
-                    Hủy
+                  Hủy
                 </Button>
               </DialogClose>
               <Button onClick={handleSaveTask} className="bg-white text-black hover:bg-gray-200">

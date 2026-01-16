@@ -1,8 +1,9 @@
 // app/chat/page.tsx
 "use client";
 
-import React, { useState, useEffect, FC } from "react";
+import React, { useState, useEffect, FC, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { cacheUtils } from "@/hooks/useCachedData";
 import ContactSidebar from "@/components/chat/chat-list";
 import ChatWindow from "@/components/chat/chat-message";
 import ChatInfoPanel from "@/components/chat/chat-info";
@@ -31,19 +32,31 @@ interface Message {
   timestamp: string;
 }
 
+interface ChatCache {
+  chats: Chat[];
+  friends: User[];
+}
+
+const CACHE_KEY = "chat_data";
+
 export default function ChatPage() {
+  // Initialize from cache for instant loading
+  const cached = cacheUtils.get<ChatCache>(CACHE_KEY);
+
   // === State quản lý giao diện ===
   const [backgroundUrl] = useState<string>(
     "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2070&auto=format&fit=crop"
   );
 
   // === State cho Chat ===
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<Chat[]>(cached?.chats || []);
   const [requests, setRequests] = useState<User[]>([]);
-  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(
+    cached?.chats?.[0]?.id || null
+  );
   const [allMessages, setAllMessages] = useState<Record<string, Message[]>>({});
-  const [loading, setLoading] = useState(true);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(!cached);
+  const [allUsers, setAllUsers] = useState<User[]>(cached?.friends || []);
 
   // State cho Panel Thông tin
   const [isInfoPanelOpen, setInfoPanelOpen] = useState<boolean>(false);
@@ -53,6 +66,27 @@ export default function ChatPage() {
     fetchChats();
     fetchFriends();
     fetchFriendRequests();
+  }, []);
+
+  // Polling for messages when a chat is selected (every 3 seconds)
+  useEffect(() => {
+    if (!selectedChatId) return;
+
+    const pollMessages = setInterval(() => {
+      fetchMessages(selectedChatId);
+    }, 3000);
+
+    return () => clearInterval(pollMessages);
+  }, [selectedChatId]);
+
+  // Polling for friend requests and friends list (every 10 seconds)
+  useEffect(() => {
+    const pollFriendsData = setInterval(() => {
+      fetchFriendRequests();
+      fetchFriends();
+    }, 10000);
+
+    return () => clearInterval(pollFriendsData);
   }, []);
 
   const fetchChats = async () => {
@@ -70,7 +104,11 @@ export default function ChatPage() {
           muted: false,
         }));
         setChats(chatsData);
-        if (chatsData.length > 0) {
+        // Update cache
+        const currentCache = cacheUtils.get<ChatCache>(CACHE_KEY);
+        cacheUtils.set(CACHE_KEY, { ...currentCache, chats: chatsData });
+
+        if (chatsData.length > 0 && !selectedChatId) {
           setSelectedChatId(chatsData[0].id);
           fetchMessages(chatsData[0].id);
         }
@@ -115,42 +153,45 @@ export default function ChatPage() {
           avatar: friend.avatar || friend.avatarUrl || "https://github.com/shadcn.png",
         }));
         setAllUsers(friendsList);
+        // Update cache
+        const currentCache = cacheUtils.get<ChatCache>(CACHE_KEY);
+        cacheUtils.set(CACHE_KEY, { ...currentCache, friends: friendsList });
       }
     } catch (error) {
       console.error("Failed to fetch friends:", error);
-  }
-};
-
-const fetchFriendRequests = async () => {
-  try {
-    const res = await fetch("/api/friends/requests");
-    if (res.ok) {
-      const data = await res.json();
-      const requestsList: User[] = data.requests.map((req: any) => ({
-        id: req.user.id,
-        name: req.user.name || req.user.username,
-        avatar: req.user.avatar || "https://github.com/shadcn.png",
-        requestId: req.id, // Store the request ID for accepting/declining
-      }));
-      setRequests(requestsList);
     }
-  } catch (error) {
-    console.error("Failed to fetch friend requests:", error);
-  }
-};
+  };
 
-// Lấy thông tin chat đang được chọn
-const selectedChat = chats.find((chat) => chat.id === selectedChatId) || null;
-const currentMessages = allMessages[selectedChatId || ""] || [];
+  const fetchFriendRequests = async () => {
+    try {
+      const res = await fetch("/api/friends/requests");
+      if (res.ok) {
+        const data = await res.json();
+        const requestsList: User[] = data.requests.map((req: any) => ({
+          id: req.user.id,
+          name: req.user.name || req.user.username,
+          avatar: req.user.avatar || "https://github.com/shadcn.png",
+          requestId: req.id, // Store the request ID for accepting/declining
+        }));
+        setRequests(requestsList);
+      }
+    } catch (error) {
+      console.error("Failed to fetch friend requests:", error);
+    }
+  };
 
-// Hàm tiện ích
-const glassEffect =
-  "bg-black/40 backdrop-blur-md border border-white/20 rounded-xl shadow-lg";
+  // Lấy thông tin chat đang được chọn
+  const selectedChat = chats.find((chat) => chat.id === selectedChatId) || null;
+  const currentMessages = allMessages[selectedChatId || ""] || [];
 
-// --- Handlers ---
-const handleSendMessage = async (messageText: string) => {
+  // Hàm tiện ích
+  const glassEffect =
+    "bg-black/40 backdrop-blur-md border border-white/20 rounded-xl shadow-lg";
+
+  // --- Handlers ---
+  const handleSendMessage = async (messageText: string) => {
     if (!messageText.trim() || !selectedChatId) return;
-    
+
     try {
       const res = await fetch(`/api/messages/rooms/${selectedChatId}`, {
         method: "POST",
@@ -181,7 +222,7 @@ const handleSendMessage = async (messageText: string) => {
 
   const handleCreateGroup = async (groupName: string, memberIds: string[]) => {
     if (!groupName.trim() || memberIds.length < 1) return;
-    
+
     try {
       const res = await fetch("/api/messages/rooms", {
         method: "POST",
@@ -215,7 +256,7 @@ const handleSendMessage = async (messageText: string) => {
 
   const handleRenameGroup = async (newName: string) => {
     if (!newName.trim() || !selectedChatId) return;
-    
+
     try {
       const res = await fetch(`/api/messages/rooms/${selectedChatId}`, {
         method: "PATCH",
@@ -246,7 +287,7 @@ const handleSendMessage = async (messageText: string) => {
 
   const handleLeaveOrDeleteChat = async () => {
     if (!selectedChatId) return;
-    
+
     try {
       const res = await fetch(`/api/messages/rooms/${selectedChatId}`, {
         method: "DELETE",
@@ -280,9 +321,9 @@ const handleSendMessage = async (messageText: string) => {
       const res = await fetch("/api/friends/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          requestId: (request as any).requestId, 
-          action: "accept" 
+        body: JSON.stringify({
+          requestId: (request as any).requestId,
+          action: "accept"
         }),
       });
 
@@ -311,9 +352,9 @@ const handleSendMessage = async (messageText: string) => {
       const res = await fetch("/api/friends/requests", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          requestId: (request as any).requestId, 
-          action: "decline" 
+        body: JSON.stringify({
+          requestId: (request as any).requestId,
+          action: "decline"
         }),
       });
 
@@ -331,7 +372,7 @@ const handleSendMessage = async (messageText: string) => {
 
   const handleAddMembers = async (memberIds: string[]) => {
     if (!selectedChatId) return;
-    
+
     try {
       const res = await fetch(`/api/messages/rooms/${selectedChatId}/members`, {
         method: "POST",
@@ -356,7 +397,7 @@ const handleSendMessage = async (messageText: string) => {
 
   const handleRemoveMember = async (memberId: string) => {
     if (!selectedChatId) return;
-    
+
     try {
       const res = await fetch(
         `/api/messages/rooms/${selectedChatId}/members/${memberId}`,
@@ -370,9 +411,9 @@ const handleSendMessage = async (messageText: string) => {
           chats.map((chat) =>
             chat.id === selectedChatId
               ? {
-                  ...chat,
-                  members: chat.members.filter((m) => m.id !== memberId),
-                }
+                ...chat,
+                members: chat.members.filter((m) => m.id !== memberId),
+              }
               : chat
           )
         );
@@ -396,12 +437,12 @@ const handleSendMessage = async (messageText: string) => {
   }
 
   return (
-    <main className="h-screen w-screen text-white p-6 transition-all duration-500">
+    <main className="h-screen w-screen text-white p-6">
       <div className="absolute inset-0 w-full h-full" />
       <div className="relative w-full h-full">
         {/* === Nội dung chính - Chat === */}
         <div
-          className={cn(  
+          className={cn(
             "absolute top-20 bottom-6 left-24 right-24",
             "flex divide-x divide-white/20",
             glassEffect,

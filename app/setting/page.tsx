@@ -134,7 +134,7 @@ export default function SettingsPage() {
 
 	return (
 		<main
-			className="h-screen w-screen text-white p-6 transition-all duration-500"
+			className="h-screen w-screen text-white p-6"
 			style={{
 				backgroundImage: `url(${settings.backgroundUrl})`,
 				backgroundSize: "cover",

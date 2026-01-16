@@ -343,7 +343,7 @@
 //       setLoading(true);
 //       const response = await fetch("/api/tasks");
 //       if (!response.ok) throw new Error("Failed to fetch tasks");
-      
+
 //       const data = await response.json();
 //       const apiTasks = data.tasks || [];
 
@@ -355,7 +355,7 @@
 
 //       apiTasks.forEach((apiTask: any) => {
 //         const columnId = statusToColumnId[apiTask.status] || "todo";
-        
+
 //         let tags: string[] = [];
 //         if (Array.isArray(apiTask.tags)) {
 //             tags = apiTask.tags;
@@ -640,7 +640,7 @@
 //                   placeholder="Nhập tiêu đề task..."
 //                 />
 //               </div>
-              
+
 //               <div className="space-y-2">
 //                 <Label htmlFor="description" className="text-white">Mô tả</Label>
 //                 <Input
@@ -746,7 +746,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, FC } from "react";
+import { useState, useEffect, useMemo, FC, useCallback } from "react";
+import { cacheUtils } from "@/hooks/useCachedData";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -925,18 +926,18 @@ const TaskCard: FC<TaskCardProps> = ({ task, isOverlay = false }) => {
         )}
 
         <div className="flex flex-wrap gap-2 text-xs text-gray-300">
-            {task.dueDate && (
+          {task.dueDate && (
             <div className={cn("flex items-center gap-1", task.columnId !== "completed" && task.dueDate < new Date() ? "text-red-400" : "")}>
-                <CalendarDays className="w-3 h-3" />
-                <span>{format(task.dueDate, "dd/MM/yyyy")}</span>
+              <CalendarDays className="w-3 h-3" />
+              <span>{format(task.dueDate, "dd/MM/yyyy")}</span>
             </div>
-            )}
-            {task.time && (
-                <div className="flex items-center gap-1">
-                    <Clock className="w-3 h-3" />
-                    <span>{task.time}</span>
-                </div>
-            )}
+          )}
+          {task.time && (
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>{task.time}</span>
+            </div>
+          )}
         </div>
 
         {task.tags && task.tags.length > 0 && (
@@ -946,8 +947,8 @@ const TaskCard: FC<TaskCardProps> = ({ task, isOverlay = false }) => {
                 key={tag}
                 variant="secondary"
                 className={cn(
-                    "text-[10px] px-1.5 py-0 text-white border-0",
-                    getTagColor(tag) // Áp dụng màu tương ứng
+                  "text-[10px] px-1.5 py-0 text-white border-0",
+                  getTagColor(tag) // Áp dụng màu tương ứng
                 )}
               >
                 {tag}
@@ -1046,19 +1047,26 @@ const KanbanColumn: FC<KanbanColumnProps> = ({ column, tasks, onAddTask }) => {
   );
 };
 
+const CACHE_KEY = "tasks_kanban";
+
 // --- Main Page ---
 export default function TaskBoardPage() {
+  // Initialize from cache
+  const cachedTasks = cacheUtils.get<Tasks>(CACHE_KEY);
+
   const [backgroundUrl, setBackgroundUrl] = useState<string>(
     "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto=format&fit=crop"
   );
 
   const [columns, setColumns] = useState<Column[]>(defaultColumns);
-  const [tasks, setTasks] = useState<Tasks>({
-    todo: [],
-    in_progress: [],
-    completed: [],
-  });
-  const [loading, setLoading] = useState(true);
+  const [tasks, setTasks] = useState<Tasks>(
+    cachedTasks || {
+      todo: [],
+      in_progress: [],
+      completed: [],
+    }
+  );
+  const [loading, setLoading] = useState(!cachedTasks);
 
   // Drag & Drop State
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -1086,10 +1094,9 @@ export default function TaskBoardPage() {
 
   const fetchTasks = async () => {
     try {
-      setLoading(true);
       const response = await fetch("/api/tasks");
       if (!response.ok) throw new Error("Failed to fetch tasks");
-      
+
       const data = await response.json();
       const apiTasks = data.tasks || [];
 
@@ -1101,17 +1108,17 @@ export default function TaskBoardPage() {
 
       apiTasks.forEach((apiTask: any) => {
         const columnId = statusToColumnId[apiTask.status] || "todo";
-        
+
         let tags: string[] = [];
         if (Array.isArray(apiTask.tags)) {
-            tags = apiTask.tags;
+          tags = apiTask.tags;
         } else if (typeof apiTask.tags === 'string') {
-            try { 
-                const parsed = JSON.parse(apiTask.tags);
-                tags = Array.isArray(parsed) ? parsed : [apiTask.tags];
-            } catch {
-                tags = [apiTask.tags];
-            }
+          try {
+            const parsed = JSON.parse(apiTask.tags);
+            tags = Array.isArray(parsed) ? parsed : [apiTask.tags];
+          } catch {
+            tags = [apiTask.tags];
+          }
         }
 
         const timeDisplay = apiTask.timeSlot || "09:00 - 10:00";
@@ -1127,12 +1134,14 @@ export default function TaskBoardPage() {
           time: timeDisplay,
         };
 
-        if(tasksByColumn[columnId]) {
-             tasksByColumn[columnId].push(task);
+        if (tasksByColumn[columnId]) {
+          tasksByColumn[columnId].push(task);
         }
       });
 
       setTasks(tasksByColumn);
+      // Cache the tasks
+      cacheUtils.set(CACHE_KEY, tasksByColumn);
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
     } finally {
@@ -1263,7 +1272,7 @@ export default function TaskBoardPage() {
           priority: newTaskData.priority,
           tags: newTaskData.tags, // Gửi mảng tag đã chọn từ dropdown
           dueDate: newTaskData.dueDate?.toISOString(),
-          timeSlot: newTaskData.time 
+          timeSlot: newTaskData.time
         }),
       });
 
@@ -1277,7 +1286,7 @@ export default function TaskBoardPage() {
         columnId: newColumnId,
         title: apiTask.title,
         description: apiTask.description || "",
-        tags: newTaskData.tags, 
+        tags: newTaskData.tags,
         dueDate: apiTask.dueDate ? new Date(apiTask.dueDate) : undefined,
         priority: apiTask.priority as Priority,
         time: newTaskData.time,
@@ -1304,7 +1313,7 @@ export default function TaskBoardPage() {
 
   return (
     <main
-      className="h-screen w-screen text-white p-6 transition-all duration-500 overflow-hidden"
+      className="h-screen w-screen text-white p-6 overflow-hidden"
       style={{
         backgroundImage: `url(${backgroundUrl})`,
         backgroundSize: "cover",
@@ -1381,18 +1390,18 @@ export default function TaskBoardPage() {
                 <Input
                   id="title"
                   value={newTaskData.title}
-                  onChange={(e) => setNewTaskData(prev => ({...prev, title: e.target.value}))}
+                  onChange={(e) => setNewTaskData(prev => ({ ...prev, title: e.target.value }))}
                   className="bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder:text-white/50"
                   placeholder="Nhập tiêu đề task..."
                 />
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-white">Mô tả</Label>
                 <Input
                   id="description"
                   value={newTaskData.description}
-                  onChange={(e) => setNewTaskData(prev => ({...prev, description: e.target.value}))}
+                  onChange={(e) => setNewTaskData(prev => ({ ...prev, description: e.target.value }))}
                   className="bg-white/10 border-white/20 focus:bg-white/20 text-white placeholder:text-white/50"
                   placeholder="Nhập mô tả..."
                 />
@@ -1418,7 +1427,7 @@ export default function TaskBoardPage() {
                       <Calendar
                         mode="single"
                         selected={newTaskData.dueDate}
-                        onSelect={(date) => setNewTaskData(prev => ({...prev, dueDate: date}))}
+                        onSelect={(date) => setNewTaskData(prev => ({ ...prev, dueDate: date }))}
                         className="text-white"
                       />
                     </PopoverContent>
@@ -1426,13 +1435,13 @@ export default function TaskBoardPage() {
                 </div>
 
                 <div className="space-y-2">
-                    <Label className="text-white">Thời gian</Label>
-                    <Input 
-                        value={newTaskData.time}
-                        onChange={(e) => setNewTaskData(prev => ({...prev, time: e.target.value}))}
-                        className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
-                        placeholder="09:00 - 10:00"
-                    />
+                  <Label className="text-white">Thời gian</Label>
+                  <Input
+                    value={newTaskData.time}
+                    onChange={(e) => setNewTaskData(prev => ({ ...prev, time: e.target.value }))}
+                    className="bg-white/10 border-white/20 text-white placeholder:text-white/50"
+                    placeholder="09:00 - 10:00"
+                  />
                 </div>
               </div>
 
@@ -1441,7 +1450,7 @@ export default function TaskBoardPage() {
                   <Label className="text-white">Độ ưu tiên</Label>
                   <Select
                     value={newTaskData.priority}
-                    onValueChange={(value: Priority) => setNewTaskData(prev => ({...prev, priority: value}))}
+                    onValueChange={(value: Priority) => setNewTaskData(prev => ({ ...prev, priority: value }))}
                   >
                     <SelectTrigger className="bg-white/10 border-white/20 text-white">
                       <SelectValue placeholder="Chọn độ ưu tiên" />
@@ -1455,23 +1464,23 @@ export default function TaskBoardPage() {
                 </div>
 
                 <div className="space-y-2">
-                    <Label className="text-white">Tag</Label>
-                    {/* DROP DOWN SELECT CHO TAG */}
-                    <Select
-                        value={newTaskData.tags?.[0] || ""}
-                        onValueChange={(value) => setNewTaskData(prev => ({...prev, tags: [value]}))}
-                    >
-                        <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                            <SelectValue placeholder="Chọn tag" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-black/70 backdrop-blur-md border-white/20 text-white">
-                            {Object.values(taskTags).map((tag) => (
-                                <SelectItem key={tag.name} value={tag.name}>
-                                    {tag.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                  <Label className="text-white">Tag</Label>
+                  {/* DROP DOWN SELECT CHO TAG */}
+                  <Select
+                    value={newTaskData.tags?.[0] || ""}
+                    onValueChange={(value) => setNewTaskData(prev => ({ ...prev, tags: [value] }))}
+                  >
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Chọn tag" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/70 backdrop-blur-md border-white/20 text-white">
+                      {Object.values(taskTags).map((tag) => (
+                        <SelectItem key={tag.name} value={tag.name}>
+                          {tag.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </div>
