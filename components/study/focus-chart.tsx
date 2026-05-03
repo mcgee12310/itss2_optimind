@@ -2,7 +2,6 @@
 "use client";
 
 import React, { FC, useEffect, useRef, useState } from "react";
-import { BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
 	LineChart,
@@ -13,74 +12,42 @@ import {
 	Tooltip,
 	ResponsiveContainer,
 } from "recharts";
-import { useCamera } from "@/hooks/useCamera";
 
-// MỚI: Export FocusDataPoint type
 export interface FocusDataPoint {
-	time: number; // Giây (để thể hiện thời gian trôi qua)
-	focus: number; // %
+	time: number;
+	focus: number;
 }
 
-// Hàm tiện ích
 const glassEffect =
 	"bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg";
 
-// Định nghĩa Props
 interface FocusChartWidgetProps {
 	isRunning: boolean;
 	currentFocusScore?: number;
 }
 
-// Component Biểu đồ
-const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusScore = 0 }) => {
-	const { isCamActive } = useCamera();
+const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning }) => {
 	const [focusData, setFocusData] = useState<FocusDataPoint[]>([]);
-	const latestFocusScoreRef = useRef<number>(0);
-
-	// Hiển thị điểm tập trung hiện tại (từ prop hoặc lấy từ data)
-	const currentFocus = currentFocusScore > 0 
-		? currentFocusScore 
-		: (focusData.length > 0 ? focusData[focusData.length - 1].focus : 0);
-
-	// Giữ giá trị focus score mới nhất trong ref để interval luôn thấy giá trị cập nhật
-	useEffect(() => {
-		if (currentFocusScore > 0) {
-			latestFocusScoreRef.current = currentFocusScore;
-		}
-	}, [currentFocusScore]);
+	const currentFocus = focusData.length > 0 ? focusData[focusData.length - 1].focus : 0;
 
 	useEffect(() => {
 		let focusInterval: NodeJS.Timeout | null = null;
-		// Chỉ thu thập dữ liệu khi đang ở chế độ FOCUS và Timer đang chạy
 		if (isRunning) {
 			focusInterval = setInterval(() => {
-				// 1. Tính toán mức độ tập trung
-				let currentFocusScoreValue = latestFocusScoreRef.current;
-
-				// Nếu chưa có điểm từ AI, fallback mock khi camera bật
-				if (currentFocusScoreValue <= 0 && isCamActive) {
-					currentFocusScoreValue = Math.floor(Math.random() * 31) + 70;
-				}
-
-				// 2. Thêm dữ liệu vào array
-				if (currentFocusScoreValue > 0) {
-					setFocusData((prevData) => [
-						...prevData,
-						{ time: prevData.length + 1, focus: currentFocusScoreValue },
-					]);
-				}
-			}, 1000); // Thu thập mỗi giây
+				const score = Math.floor(Math.random() * 31) + 70;
+				setFocusData((prev) => [
+					...prev,
+					{ time: prev.length + 1, focus: score },
+				]);
+			}, 1000);
 		}
-
 		return () => {
 			if (focusInterval) clearInterval(focusInterval);
 		};
-	}, [isRunning, isCamActive]);
+	}, [isRunning]);
 
 	return (
-		<div
-			className={cn("w-full h-full px-4 pt-3 flex flex-col", glassEffect)}
-		>
+		<div className={cn("w-full h-full px-4 pt-3 flex flex-col", glassEffect)}>
 			<div className="flex justify-between items-center mb-1">
 				<p className="font-semibold text-gray-200">Độ tập trung</p>
 				<p
@@ -91,17 +58,13 @@ const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusSc
 				</p>
 			</div>
 
-			{/* Biểu đồ Line Chart */}
 			<div className="flex-1">
 				<ResponsiveContainer width="100%" height="90%">
 					<LineChart
 						data={focusData}
 						margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
 					>
-						<CartesianGrid
-							strokeDasharray="3 3"
-							stroke="#ffffff1a"
-						/>
+						<CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" />
 						<XAxis
 							dataKey="time"
 							stroke="#ffffff80"
@@ -127,15 +90,15 @@ const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusSc
 								color: "#fff",
 							}}
 							labelFormatter={(val) => `Thời gian: ${val}s`}
-							formatter={(value, name) => [`${value}%`]}
+							formatter={(value) => [`${value}%`]}
 						/>
 						<Line
 							type="monotone"
 							dataKey="focus"
-							stroke="#3b82f6" // Màu xanh
+							stroke="#3b82f6"
 							strokeWidth={2}
 							dot={false}
-							isAnimationActive={false} // Tắt animation để cập nhật mượt hơn
+							isAnimationActive={false}
 						/>
 					</LineChart>
 				</ResponsiveContainer>

@@ -25,7 +25,6 @@ import {
 	Coffee,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { startSilentAudio, stopSilentAudio } from "@/lib/silent-audio";
 
 // Hàm tiện ích
 const glassEffect =
@@ -44,6 +43,8 @@ interface PomodoroTimerProps {
 	onToggleTasks: () => void;
 	isRunning: boolean;
 	setIsRunning: (bool: boolean) => void;
+	// Callback báo cho parent biết đang ở chế độ focus hay break
+	onFocusModeChange?: (isFocus: boolean) => void;
 }
 
 // --- Component Chính: Pomodoro Timer ---
@@ -52,6 +53,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 	onToggleTasks,
 	isRunning,
 	setIsRunning,
+	onFocusModeChange,
 }) => {
 	// === State Cài đặt Pomodoro (tính bằng phút) ===
 	const [configFocusTime, setConfigFocusTime] = useState<number>(25);
@@ -81,8 +83,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 		mode: timerMode,
 	});
 
-	// Ref cho âm thanh
-	const audioRef = useRef<HTMLAudioElement>(null);
+	// Ref cho timer
 	const workerRef = useRef<Worker | null>(null);
 	const startTimeRef = useRef<number>(0); // Lưu thời gian bắt đầu timer
 	const initialTimeRef = useRef<number>(0); // Lưu thời gian ban đầu khi start
@@ -105,10 +106,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 			// Nếu timer kết thúc
 			if (newTimer === 0) {
-				// Ensure audio is stopped when timer ends
-				stopSilentAudio();
 				setIsRunning(false);
-				audioRef.current?.play();
 				startTimeRef.current = 0;
 				initialTimeRef.current = 0;
 
@@ -118,14 +116,17 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 						if (newCompleted >= configCycles) {
 							setCurrentMode("longBreak");
 							setTimer(configLongBreakTime * 60);
+							onFocusModeChange?.(false); // Đang nghỉ dài
 						} else {
 							setCompletedCycles(newCompleted);
 							setCurrentMode("break");
 							setTimer(configBreakTime * 60);
+							onFocusModeChange?.(false); // Đang nghỉ
 						}
 					} else {
 						setCurrentMode("focus");
 						setTimer(configFocusTime * 60);
+						onFocusModeChange?.(true); // Quay lại focus
 					}
 				}
 			} else if (isRunning) {
@@ -166,11 +167,10 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 	// --- Handlers ---
 	const resetTimer = (): void => {
-		// Stop background silent audio when resetting
-		stopSilentAudio();
 		setIsRunning(false);
 		setCurrentMode("focus");
 		setCompletedCycles(0);
+		onFocusModeChange?.(true); // Reset về focus mode
 		if (timerMode === "pomodoro") {
 			setTimer(configFocusTime * 60);
 		} else {
@@ -190,12 +190,8 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 		}
 
 		if (!isRunning) {
-			// Starting from a user gesture — ensure AudioContext resumes
-			startSilentAudio().catch(() => {});
 			setIsRunning(true);
 		} else {
-			// Stopping — cleanup audio
-			stopSilentAudio();
 			setIsRunning(false);
 		}
 	};
@@ -221,8 +217,6 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 		setTimerMode(tempSettings.mode);
 		setIsSettingsOpen(false);
 
-		// Stop silent audio when saving settings (stops session)
-		stopSilentAudio();
 		setIsRunning(false);
 		setCurrentMode("focus");
 		setCompletedCycles(0);
@@ -237,8 +231,6 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 		if (mode === "pomodoro" || mode === "countdown") {
 			const newMode = mode as "pomodoro" | "countdown";
 			setTimerMode(newMode);
-			// Stop silent audio when changing mode
-			stopSilentAudio();
 			setIsRunning(false);
 			setCurrentMode("focus");
 			setCompletedCycles(0);
