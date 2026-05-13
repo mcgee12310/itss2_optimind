@@ -26,7 +26,8 @@ interface FocusChartWidgetProps {
 	currentFocusScore?: number;
 }
 
-const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning }) => {
+
+const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusScore }) => {
 	const [focusData, setFocusData] = useState<FocusDataPoint[]>([]);
 	const currentFocus = focusData.length > 0 ? focusData[focusData.length - 1].focus : 0;
 
@@ -34,17 +35,16 @@ const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning }) => {
 		let focusInterval: NodeJS.Timeout | null = null;
 		if (isRunning) {
 			focusInterval = setInterval(() => {
-				const score = Math.floor(Math.random() * 31) + 70;
 				setFocusData((prev) => [
 					...prev,
-					{ time: prev.length + 1, focus: score },
+					{ time: prev.length + 1, focus: typeof currentFocusScore === 'number' ? currentFocusScore : 0 },
 				]);
 			}, 1000);
 		}
 		return () => {
 			if (focusInterval) clearInterval(focusInterval);
 		};
-	}, [isRunning]);
+	}, [isRunning, currentFocusScore]);
 
 	return (
 		<div className={cn("w-full h-full px-4 pt-3 flex flex-col", glassEffect)}>

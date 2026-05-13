@@ -1,54 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, FC } from "react";
+import { useRef, useState, useCallback, FC } from "react";
 import { cn } from "@/lib/utils";
 import { Video, VideoOff } from "lucide-react";
+import { useEngagementAnalyzer } from "@/hooks/useEngagementAnalyzer";
 
 const MIN_W = 160;
 const MIN_H = 120;
-const DEFAULT_W = 240;
-const DEFAULT_H = 180;
+const DEFAULT_W = 320;
+const DEFAULT_H = 240;
 
-const CameraWidget: FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+interface CameraWidgetProps {
+  onScoreUpdate?: (score: number) => void;
+}
 
+const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
   const [isOn, setIsOn] = useState(false);
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
 
-  // Gán srcObject sau khi video element đã render
-  useEffect(() => {
-    if (isOn && streamRef.current && videoRef.current) {
-      videoRef.current.srcObject = streamRef.current;
-    }
-  }, [isOn]);
+  // The hook owns the camera stream and video element ref
+  const { videoRef, focusScore, status, engaged, cameraReady } =
+    useEngagementAnalyzer(isOn, onScoreUpdate);
 
-  const startCamera = useCallback(async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-        audio: false,
-      });
-      streamRef.current = stream;
-      setHasPermission(true);
-      setIsOn(true);
-    } catch {
-      setHasPermission(false);
-      setIsOn(true); // vẫn mở để hiện thông báo lỗi
-    }
+  const toggleCamera = useCallback(() => {
+    setIsOn((prev) => !prev);
   }, []);
 
-  const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
-    if (videoRef.current) videoRef.current.srcObject = null;
-    setIsOn(false);
-  }, []);
-
-  useEffect(() => () => stopCamera(), [stopCamera]);
-
-  // === Resize (góc phải dưới) ===
+  // === Resize (bottom-right corner) ===
   const resizeRef = useRef<{ mx: number; my: number; w: number; h: number } | null>(null);
 
   const onResizeMouseDown = useCallback(
@@ -76,7 +54,6 @@ const CameraWidget: FC = () => {
   );
 
   return (
-    // Luôn giữ nguyên kích thước dù bật hay tắt
     <div
       style={{ width: size.w, height: size.h, flexShrink: 0, position: "relative" }}
       className={cn(
@@ -84,33 +61,34 @@ const CameraWidget: FC = () => {
         "bg-black/50 backdrop-blur-md"
       )}
     >
-      {isOn && hasPermission !== false ? (
-        /* === Video feed === */
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          playsInline
-          className="w-full h-full object-cover"
-          style={{ transform: "scaleX(-1)" }}
-        />
-      ) : (
-        /* === Placeholder khi tắt hoặc không có quyền === */
-        <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-white/30">
-          {hasPermission === false ? (
-            <>
-              <VideoOff className="w-8 h-8" />
-              <span className="text-xs text-center px-3">Không có quyền camera</span>
-            </>
-          ) : (
-            <VideoOff className="w-10 h-10 opacity-20" />
+      {/* Video element — always mounted so the hook's ref can attach */}
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        playsInline
+        className={cn(
+          "w-full h-full object-cover transition-opacity duration-300",
+          isOn && cameraReady ? "opacity-100" : "opacity-0"
+        )}
+        style={{ transform: "scaleX(-1)" }}
+      />
+
+      {/* Placeholder when camera is off or loading */}
+      {(!isOn || !cameraReady) && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-white/30">
+          <VideoOff className="w-10 h-10 opacity-30" />
+          {isOn && !cameraReady && (
+            <span className="text-xs text-center px-3 text-white/50 animate-pulse">
+              Đang khởi tạo...
+            </span>
           )}
         </div>
       )}
 
-      {/* Nút Bật/Tắt — góc trên phải, luôn hiển thị */}
+      {/* Toggle button — top-right */}
       <button
-        onClick={isOn ? stopCamera : startCamera}
+        onClick={toggleCamera}
         className={cn(
           "absolute top-2 right-2 z-10",
           "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all",
@@ -120,13 +98,32 @@ const CameraWidget: FC = () => {
             : "bg-white/20 hover:bg-white/30 text-white/80"
         )}
       >
-        {isOn
-          ? <><VideoOff className="w-3 h-3" /> Tắt</>
-          : <><Video className="w-3 h-3" /> Bật</>
-        }
+        {isOn ? <><VideoOff className="w-3 h-3" /> Tắt</> : <><Video className="w-3 h-3" /> Bật</>}
       </button>
 
-      {/* Resize handle góc phải dưới */}
+      {/* Focus Score — top-left, only when running */}
+      {isOn && cameraReady && (
+        <div
+          className={cn(
+            "absolute top-2 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm",
+            "transition-all duration-300",
+            engaged
+              ? "bg-green-500/70 text-white"
+              : "bg-yellow-500/70 text-white"
+          )}
+        >
+          {focusScore}/100
+        </div>
+      )}
+
+      {/* Status text — bottom-left */}
+      {isOn && cameraReady && (
+        <div className="absolute bottom-2 left-2 z-10 text-xs text-white/60 backdrop-blur-sm px-2 py-1 bg-black/30 rounded">
+          {status}
+        </div>
+      )}
+
+      {/* Resize handle */}
       <div
         onMouseDown={onResizeMouseDown}
         className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize z-10"

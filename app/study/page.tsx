@@ -3,18 +3,26 @@
 import { useState, FC } from "react";
 import { cn } from "@/lib/utils";
 import { useFocusScoring } from "@/hooks/useScore";
+import { useRef, useCallback, useState as useReactState } from "react";
 
 import PomodoroTimer from "@/components/study/timer";
 import TaskListWidget from "@/components/study/task-list";
 import FocusChartWidget from "@/components/study/focus-chart";
-import DraggableCamera from "@/components/study/camera-widget";
+import CameraWidget from "@/components/study/camera-widget";
+
 
 const StudyPage: FC = () => {
   const [showTasks, setShowTasks] = useState<boolean>(true);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(true);
+  const [focusScore, setFocusScore] = useReactState<number>(0);
 
   useFocusScoring(isRunning, isFocusMode);
+
+  // Callback to receive score from camera
+  const handleScoreUpdate = useCallback((score: number) => {
+    setFocusScore(score);
+  }, []);
 
   return (
     <main className="h-screen w-screen text-white p-6 overflow-hidden">
@@ -34,7 +42,7 @@ const StudyPage: FC = () => {
               setIsRunning={setIsRunning}
               onFocusModeChange={setIsFocusMode}
             />
-            <DraggableCamera />
+            <CameraWidget onScoreUpdate={handleScoreUpdate} />
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full h-auto md:h-80 justify-between pb-16 md:pb-0">
@@ -47,7 +55,7 @@ const StudyPage: FC = () => {
             {/* Widget 3: Chart */}
             <FocusChartWidget
               isRunning={isRunning}
-              currentFocusScore={0}
+              currentFocusScore={focusScore}
             />
           </div>
         </div>
