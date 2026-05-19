@@ -104,6 +104,7 @@ const EXT_FILES = [
   { name: "popup.html", label: "popup.html" },
   { name: "popup.js", label: "popup.js" },
   { name: "blocked.html", label: "blocked.html" },
+  { name: "blocked.js", label: "blocked.js" },
 ];
 
 interface Props {

@@ -1,16 +1,16 @@
 "use client";
 
-import { useState, FC } from "react";
+import { useState, FC, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, X, ShieldOff, ShieldCheck, Trash2, Globe } from "lucide-react";
+import { Plus, X, ShieldOff, ShieldCheck, Trash2, Globe, Puzzle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useExtensionSync } from "@/hooks/useExtensionSync";
 
 const glassEffect =
 	"bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg";
 
-// Danh sách trang phổ biến để chọn nhanh
 const PRESET_SITES = [
 	{ id: "facebook", label: "Facebook", url: "facebook.com" },
 	{ id: "youtube", label: "YouTube", url: "youtube.com" },
@@ -31,7 +31,6 @@ interface BlockedSite {
 	id: string;
 	url: string;
 	label?: string;
-	emoji?: string;
 }
 
 interface SiteBlockerWidgetProps {
@@ -40,42 +39,62 @@ interface SiteBlockerWidgetProps {
 }
 
 const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
-	const [blockedSites, setBlockedSites] = useState<BlockedSite[]>([]);
+	const ext = useExtensionSync();
+	const [blockedSites, setBlockedSitesLocal] = useState<BlockedSite[]>([]);
 	const [inputUrl, setInputUrl] = useState("");
-	const [isBlocking, setIsBlocking] = useState(false);
+	const [isBlocking, setIsBlockingLocal] = useState(false);
+
+	// Load initial state from extension once it responds
+	useEffect(() => {
+		if (!ext.installed) return;
+		setBlockedSitesLocal(
+			ext.blockedSites.map((url) => {
+				const preset = PRESET_SITES.find((p) => p.url === url);
+				return preset ? { id: preset.id, url: preset.url, label: preset.label } : { id: url, url };
+			})
+		);
+		setIsBlockingLocal(ext.isEnabled);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [ext.installed]);
+
+	const syncToExtension = (sites: BlockedSite[], enabled: boolean) => {
+		if (ext.installed) {
+			ext.setBlockedSites(sites.map((s) => s.url));
+			ext.setEnabled(enabled);
+		}
+	};
 
 	const isPresetBlocked = (presetId: string) =>
 		blockedSites.some((s) => s.id === presetId);
 
 	const togglePreset = (preset: (typeof PRESET_SITES)[0]) => {
-		if (isPresetBlocked(preset.id)) {
-			setBlockedSites((prev) => prev.filter((s) => s.id !== preset.id));
-		} else {
-			setBlockedSites((prev) => [
-				...prev,
-				{ id: preset.id, url: preset.url, label: preset.label, emoji: preset.emoji },
-			]);
-		}
+		const next = isPresetBlocked(preset.id)
+			? blockedSites.filter((s) => s.id !== preset.id)
+			: [...blockedSites, { id: preset.id, url: preset.url, label: preset.label }];
+		setBlockedSitesLocal(next);
+		syncToExtension(next, isBlocking);
 	};
 
 	const handleAddCustomUrl = () => {
-		const raw = inputUrl.trim().toLowerCase().replace(/^https?:\/\//, "");
+		const raw = inputUrl.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
 		if (!raw) return;
-		const alreadyExists = blockedSites.some((s) => s.url === raw);
-		if (alreadyExists) { setInputUrl(""); return; }
-		setBlockedSites((prev) => [
-			...prev,
-			{ id: crypto.randomUUID(), url: raw },
-		]);
+		if (blockedSites.some((s) => s.url === raw)) { setInputUrl(""); return; }
+		const next = [...blockedSites, { id: crypto.randomUUID(), url: raw }];
+		setBlockedSitesLocal(next);
+		syncToExtension(next, isBlocking);
 		setInputUrl("");
 	};
 
 	const handleRemove = (id: string) => {
-		setBlockedSites((prev) => prev.filter((s) => s.id !== id));
+		const next = blockedSites.filter((s) => s.id !== id);
+		setBlockedSitesLocal(next);
+		syncToExtension(next, isBlocking);
 	};
 
 	const handleToggleBlock = () => {
-		setIsBlocking((prev) => !prev);
+		const next = !isBlocking;
+		setIsBlockingLocal(next);
+		syncToExtension(blockedSites, next);
 	};
 
 	if (!show) return null;
@@ -97,9 +116,17 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
 				<div className="flex items-center gap-2">
 					<ShieldCheck className="h-4 w-4 text-emerald-400" />
 					<p className="text-lg font-semibold">Chặn trang web</p>
+					{ext.installed ? (
+						<span className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+							<Puzzle className="h-3 w-3" /> Đã kết nối
+						</span>
+					) : (
+						<span className="flex items-center gap-1 text-xs bg-white/10 text-white/40 border border-white/10 px-2 py-0.5 rounded-full">
+							<Puzzle className="h-3 w-3" /> Chưa cài extension
+						</span>
+					)}
 				</div>
 				<div className="flex items-center gap-2">
-					{/* Nút Bật/Tắt chặn */}
 					<button
 						onClick={handleToggleBlock}
 						className={cn(

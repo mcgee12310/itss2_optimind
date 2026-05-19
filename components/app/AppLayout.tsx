@@ -1,13 +1,17 @@
 "use client";
 
 import ScoreWidget from "@/components/app/score-widget";
+import ExtensionGuideModal from "@/components/app/ExtensionGuideModal";
 import { ScoreProvider } from "@/hooks/useScore";
+import { cn } from "@/lib/utils";
+import { Puzzle } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
 const DEFAULT_BACKGROUND = "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto=format&fit=crop";
 
 const AppLayoutContent = ({ children }: { children: React.ReactNode }) => {
 	const [isUiVisible, setIsUiVisible] = useState<boolean>(true);
+	const [showExtModal, setShowExtModal] = useState<boolean>(false);
 	const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	const resetUiTimer = useCallback(() => {
@@ -37,7 +41,28 @@ const AppLayoutContent = ({ children }: { children: React.ReactNode }) => {
 			{/* === Score Widget (góc trái — thay logo) === */}
 			<ScoreWidget isUiVisible={isUiVisible} />
 
+			{/* === Extension Guide Button === */}
+			<button
+				onClick={() => setShowExtModal(true)}
+				className={cn(
+					"absolute top-14 left-2 z-30",
+					"bg-black/40 backdrop-blur-md border border-white/20 rounded-xl shadow-lg",
+					"flex items-center gap-2 px-3 py-2",
+					"text-xs font-medium text-white/70 hover:text-white hover:bg-black/60",
+					"transition-all duration-300 ease-in-out",
+					isUiVisible
+						? "opacity-100 translate-y-0"
+						: "opacity-0 -translate-y-full pointer-events-none"
+				)}
+				title="Hướng dẫn cài extension chặn web"
+			>
+				<Puzzle className="w-4 h-4 text-indigo-400" />
+				<span>Cài Extension</span>
+			</button>
+
 			{children}
+
+			<ExtensionGuideModal open={showExtModal} onOpenChange={setShowExtModal} />
 		</div>
 	);
 };
