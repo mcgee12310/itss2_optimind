@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "OptiMind - Chặn Web",
+  "version": "1.0.0",
+  "description": "Chặn các trang web gây xao nhãng, giúp bạn tập trung học tập với OptiMind",
+  "permissions": [
+    "declarativeNetRequest",
+    "storage"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "OptiMind - Chặn Web"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://localhost/*",
+        "http://localhost:3000/*",
+        "http://localhost:3001/*",
+        "https://localhost/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["blocked.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
