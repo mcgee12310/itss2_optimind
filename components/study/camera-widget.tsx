@@ -6,8 +6,8 @@ import { Video, VideoOff } from "lucide-react";
 
 const MIN_W = 160;
 const MIN_H = 120;
-const DEFAULT_W = 240;
-const DEFAULT_H = 180;
+const DEFAULT_W = 320;
+const DEFAULT_H = 214;
 
 const CameraWidget: FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -49,19 +49,35 @@ const CameraWidget: FC = () => {
   useEffect(() => () => stopCamera(), [stopCamera]);
 
   // === Resize (góc phải dưới) ===
-  const resizeRef = useRef<{ mx: number; my: number; w: number; h: number } | null>(null);
+  const resizeRef = useRef<{
+    mx: number;
+    my: number;
+    w: number;
+    h: number;
+  } | null>(null);
 
   const onResizeMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      resizeRef.current = { mx: e.clientX, my: e.clientY, w: size.w, h: size.h };
+      resizeRef.current = {
+        mx: e.clientX,
+        my: e.clientY,
+        w: size.w,
+        h: size.h,
+      };
 
       const onMove = (ev: MouseEvent) => {
         if (!resizeRef.current) return;
         setSize({
-          w: Math.max(MIN_W, resizeRef.current.w + ev.clientX - resizeRef.current.mx),
-          h: Math.max(MIN_H, resizeRef.current.h + ev.clientY - resizeRef.current.my),
+          w: Math.max(
+            MIN_W,
+            resizeRef.current.w + ev.clientX - resizeRef.current.mx,
+          ),
+          h: Math.max(
+            MIN_H,
+            resizeRef.current.h + ev.clientY - resizeRef.current.my,
+          ),
         });
       };
       const onUp = () => {
@@ -72,16 +88,21 @@ const CameraWidget: FC = () => {
       window.addEventListener("mousemove", onMove);
       window.addEventListener("mouseup", onUp);
     },
-    [size]
+    [size],
   );
 
   return (
     // Luôn giữ nguyên kích thước dù bật hay tắt
     <div
-      style={{ width: size.w, height: size.h, flexShrink: 0, position: "relative" }}
+      style={{
+        width: size.w,
+        height: size.h,
+        flexShrink: 0,
+        position: "relative",
+      }}
       className={cn(
         "rounded-2xl border border-white/20 shadow-xl overflow-hidden",
-        "bg-black/50 backdrop-blur-md"
+        "bg-black/50 backdrop-blur-md",
       )}
     >
       {isOn && hasPermission !== false ? (
@@ -100,7 +121,9 @@ const CameraWidget: FC = () => {
           {hasPermission === false ? (
             <>
               <VideoOff className="w-8 h-8" />
-              <span className="text-xs text-center px-3">Không có quyền camera</span>
+              <span className="text-xs text-center px-3">
+                Không có quyền camera
+              </span>
             </>
           ) : (
             <VideoOff className="w-10 h-10 opacity-20" />
@@ -117,13 +140,18 @@ const CameraWidget: FC = () => {
           "backdrop-blur-sm",
           isOn
             ? "bg-red-500/70 hover:bg-red-600/80 text-white"
-            : "bg-white/20 hover:bg-white/30 text-white/80"
+            : "bg-white/20 hover:bg-white/30 text-white/80",
         )}
       >
-        {isOn
-          ? <><VideoOff className="w-3 h-3" /> Tắt</>
-          : <><Video className="w-3 h-3" /> Bật</>
-        }
+        {isOn ? (
+          <>
+            <VideoOff className="w-3 h-3" /> Tắt
+          </>
+        ) : (
+          <>
+            <Video className="w-3 h-3" /> Bật
+          </>
+        )}
       </button>
 
       {/* Resize handle góc phải dưới */}
@@ -131,7 +159,8 @@ const CameraWidget: FC = () => {
         onMouseDown={onResizeMouseDown}
         className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize z-10"
         style={{
-          background: "linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.25) 50%)",
+          background:
+            "linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.25) 50%)",
         }}
       />
     </div>
