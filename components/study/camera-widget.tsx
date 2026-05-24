@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback, FC } from "react";
+import { useRef, useState, useCallback, useEffect, FC } from "react";
 import { cn } from "@/lib/utils";
 import { Video, VideoOff } from "lucide-react";
 import { useEngagementAnalyzer } from "@/hooks/useEngagementAnalyzer";
@@ -26,20 +26,36 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
     setIsOn((prev) => !prev);
   }, []);
 
-  // === Resize (bottom-right corner) ===
-  const resizeRef = useRef<{ mx: number; my: number; w: number; h: number } | null>(null);
+  // === Resize (góc phải dưới) ===
+  const resizeRef = useRef<{
+    mx: number;
+    my: number;
+    w: number;
+    h: number;
+  } | null>(null);
 
   const onResizeMouseDown = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      resizeRef.current = { mx: e.clientX, my: e.clientY, w: size.w, h: size.h };
+      resizeRef.current = {
+        mx: e.clientX,
+        my: e.clientY,
+        w: size.w,
+        h: size.h,
+      };
 
       const onMove = (ev: MouseEvent) => {
         if (!resizeRef.current) return;
         setSize({
-          w: Math.max(MIN_W, resizeRef.current.w + ev.clientX - resizeRef.current.mx),
-          h: Math.max(MIN_H, resizeRef.current.h + ev.clientY - resizeRef.current.my),
+          w: Math.max(
+            MIN_W,
+            resizeRef.current.w + ev.clientX - resizeRef.current.mx,
+          ),
+          h: Math.max(
+            MIN_H,
+            resizeRef.current.h + ev.clientY - resizeRef.current.my,
+          ),
         });
       };
       const onUp = () => {
@@ -50,15 +66,20 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
       window.addEventListener("mousemove", onMove);
       window.addEventListener("mouseup", onUp);
     },
-    [size]
+    [size],
   );
 
   return (
     <div
-      style={{ width: size.w, height: size.h, flexShrink: 0, position: "relative" }}
+      style={{
+        width: size.w,
+        height: size.h,
+        flexShrink: 0,
+        position: "relative",
+      }}
       className={cn(
         "rounded-2xl border border-white/20 shadow-xl overflow-hidden",
-        "bg-black/50 backdrop-blur-md"
+        "bg-black/50 backdrop-blur-md",
       )}
     >
       {/* Video element — always mounted so the hook's ref can attach */}
@@ -95,10 +116,18 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
           "backdrop-blur-sm",
           isOn
             ? "bg-red-500/70 hover:bg-red-600/80 text-white"
-            : "bg-white/20 hover:bg-white/30 text-white/80"
+            : "bg-white/20 hover:bg-white/30 text-white/80",
         )}
       >
-        {isOn ? <><VideoOff className="w-3 h-3" /> Tắt</> : <><Video className="w-3 h-3" /> Bật</>}
+        {isOn ? (
+          <>
+            <VideoOff className="w-3 h-3" /> Tắt
+          </>
+        ) : (
+          <>
+            <Video className="w-3 h-3" /> Bật
+          </>
+        )}
       </button>
 
       {/* Focus Score — top-left, only when running */}
@@ -128,7 +157,8 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
         onMouseDown={onResizeMouseDown}
         className="absolute bottom-0 right-0 w-6 h-6 cursor-se-resize z-10"
         style={{
-          background: "linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.25) 50%)",
+          background:
+            "linear-gradient(135deg, transparent 50%, rgba(255,255,255,0.25) 50%)",
         }}
       />
     </div>
