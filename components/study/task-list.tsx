@@ -173,7 +173,7 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
         </div>
       </div>
 
-      <ScrollArea className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Nhập URL thủ công */}
         <div className="flex gap-2 p-3 border-b border-white/10">
           <div className="relative flex-1">
@@ -263,7 +263,7 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
             Chưa chặn trang nào
           </div>
         )}
-      </ScrollArea>
+      </div>
 
       {/* Footer: tóm tắt */}
       {blockedSites.length > 0 && (
