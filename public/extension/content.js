@@ -1,6 +1,14 @@
 // Bridge: OptiMind web app <-> extension storage
 console.log('[OptiMind Blocker] content script loaded on', location.href);
 
+// ── Khi OptiMind mở: luôn bắt đầu ở trạng thái chưa chặn ──
+chrome.storage.local.set({ isEnabled: false });
+
+// Giữ kết nối dài hạn với background.
+// Khi tab bị đóng / navigate đi, port tự động disconnect
+// → background nhận onDisconnect và reset ngay lập tức.
+chrome.runtime.connect({ name: 'optimind-tab' });
+
 function pushStateToPage(overrides) {
   chrome.storage.local.get(['blockedSites', 'isEnabled'], (data) => {
     window.dispatchEvent(
@@ -8,7 +16,7 @@ function pushStateToPage(overrides) {
         detail: {
           installed: true,
           blockedSites: data.blockedSites || [],
-          isEnabled: data.isEnabled !== false,
+          isEnabled: data.isEnabled === true,
           ...overrides,
         },
       })
@@ -34,10 +42,9 @@ chrome.storage.onChanged.addListener((changes, area) => {
   if (area !== 'local') return;
   const overrides = {};
   if (changes.blockedSites) overrides.blockedSites = changes.blockedSites.newValue ?? [];
-  if (changes.isEnabled) overrides.isEnabled = changes.isEnabled.newValue ?? true;
+  if (changes.isEnabled !== undefined) overrides.isEnabled = changes.isEnabled.newValue === true;
   pushStateToPage(overrides);
 });
 
-// Announce presence immediately on load
-pushStateToPage();
-
+// Announce presence
+pushStateToPage({ isEnabled: false });
