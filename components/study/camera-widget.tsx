@@ -78,8 +78,8 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
         position: "relative",
       }}
       className={cn(
-        "rounded-2xl border border-white/20 shadow-xl overflow-hidden",
-        "bg-black/50 backdrop-blur-md",
+        "rounded-2xl border border-white/20 shadow-lg overflow-hidden",
+        "bg-black/50",
       )}
     >
       {/* Video element — always mounted so the hook's ref can attach */}
