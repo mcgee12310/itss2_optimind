@@ -122,11 +122,13 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 							setCurrentMode("break");
 							setTimer(configBreakTime * 60);
 							onFocusModeChange?.(false); // Đang nghỉ
+							setIsRunning(true); // Chạy ngay break timer
 						}
 					} else {
 						setCurrentMode("focus");
 						setTimer(configFocusTime * 60);
 						onFocusModeChange?.(true); // Quay lại focus
+						setIsRunning(true); // Chạy ngay focus timer
 					}
 				}
 			} else if (isRunning) {
