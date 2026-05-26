@@ -169,7 +169,6 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 			}
 		}
 	}, [configFocusTime, configBreakTime, configLongBreakTime, configCycles, configCountdownTime, timerMode]);
-	}, [configFocusTime, configBreakTime, configLongBreakTime, configCycles, configCountdownTime, timerMode]);
 
 	// --- Old Timer Effect (Replaced by Web Worker) ---
 	// Removed: setInterval-based timer is now handled by timer.worker.ts
