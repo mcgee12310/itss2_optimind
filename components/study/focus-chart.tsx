@@ -15,7 +15,7 @@ import {
 
 export interface FocusDataPoint {
 	time: number;
-	focus: number;
+	focus: number | null;
 }
 
 const glassEffect =
@@ -40,10 +40,10 @@ const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusSc
 		const absTime = windowStart + i;
 		return {
 			time: i,
-			focus: focusByTime.get(absTime) ?? 0,
+			focus: focusByTime.has(absTime) ? (focusByTime.get(absTime) as number) : null,
 		};
 	});
-	const visibleChartData = isRunning ? chartData : [];
+	const visibleChartData = chartData;
 
 	useEffect(() => {
 		let focusInterval: NodeJS.Timeout | null = null;
@@ -128,6 +128,7 @@ const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusSc
 							stroke="#3b82f6"
 							strokeWidth={2}
 							dot={false}
+							connectNulls={false}
 							isAnimationActive={false}
 						/>
 					</LineChart>
