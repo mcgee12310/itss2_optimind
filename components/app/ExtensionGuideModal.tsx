@@ -20,7 +20,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     number: 1,
-    icon: "⬇️",
+    icon: "⬇",
     title: "Tải & giải nén ZIP",
     desc: (
       <>
@@ -37,7 +37,7 @@ const STEPS: Step[] = [
   },
   {
     number: 2,
-    icon: "🌐",
+    icon: "",
     title: "Mở trang Tiện ích mở rộng",
     desc: (
       <>
@@ -51,7 +51,7 @@ const STEPS: Step[] = [
   },
   {
     number: 3,
-    icon: "🔧",
+    icon: "",
     title: 'Bật "Chế độ nhà phát triển"',
     desc: (
       <>
@@ -63,7 +63,7 @@ const STEPS: Step[] = [
   },
   {
     number: 4,
-    icon: "📂",
+    icon: "",
     title: 'Nhấn "Load unpacked"',
     desc: (
       <>
@@ -84,12 +84,12 @@ const STEPS: Step[] = [
   },
   {
     number: 5,
-    icon: "✅",
+    icon: "",
     title: "Hoàn tất!",
     desc: (
       <>
-        Extension <strong>OptiMind Blocker ⚡</strong> sẽ xuất hiện trong danh
-        sách. Nhấn vào biểu tượng puzzle 🧩 trên thanh công cụ Chrome để ghim và
+        Extension <strong>OptiMind Blocker</strong> sẽ xuất hiện trong danh
+        sách. Nhấn vào biểu tượng puzzle trên thanh công cụ Chrome để ghim và
         sử dụng.
       </>
     ),
@@ -98,14 +98,8 @@ const STEPS: Step[] = [
 
 const EXT_FILES = [
   { name: "manifest.json", label: "manifest.json" },
-  { name: "icon16.png", label: "icon16.png" },
-  { name: "icon32.png", label: "icon32.png" },
-  { name: "icon48.png", label: "icon48.png" },
-  { name: "icon128.png", label: "icon128.png" },
   { name: "background.js", label: "background.js" },
   { name: "content.js", label: "content.js" },
-  { name: "popup.html", label: "popup.html" },
-  { name: "popup.js", label: "popup.js" },
   { name: "blocked.html", label: "blocked.html" },
   { name: "blocked.js", label: "blocked.js" },
 ];
@@ -156,7 +150,7 @@ export default function ExtensionGuideModal({ open, onOpenChange }: Props) {
         <div className="p-6 pb-0">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold flex items-center gap-3">
-              <span className="text-2xl">⚡</span>
+              <span className="text-2xl"></span>
               <span className="bg-gradient-to-r from-indigo-300 to-purple-300 bg-clip-text text-transparent">
                 Cài đặt OptiMind Blocker
               </span>
@@ -242,9 +236,6 @@ export default function ExtensionGuideModal({ open, onOpenChange }: Props) {
             <div>
               <p className="text-sm font-semibold text-white mb-0.5">
                 optimind-blocker.zip
-              </p>
-              <p className="text-xs text-white/40">
-                11 file · manifest, icons, background, popup, blocked page
               </p>
             </div>
             <button
