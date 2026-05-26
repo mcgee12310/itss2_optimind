@@ -114,19 +114,29 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 					if (currentMode === "focus") {
 						const newCompleted = completedCycles + 1;
 						if (newCompleted >= configCycles) {
+							setCompletedCycles(newCompleted);
 							setCurrentMode("longBreak");
 							setTimer(configLongBreakTime * 60);
 							onFocusModeChange?.(false); // Đang nghỉ dài
+							setIsRunning(true); // Tự động bật timer nghỉ dài
 						} else {
 							setCompletedCycles(newCompleted);
 							setCurrentMode("break");
 							setTimer(configBreakTime * 60);
 							onFocusModeChange?.(false); // Đang nghỉ
+							setIsRunning(true); // Tự động bật timer nghỉ
 						}
+					} else if (currentMode === "longBreak"){
+                        setCurrentMode("focus");
+                        setTimer(configFocusTime * 60);
+                        setCompletedCycles(0);
+                        onFocusModeChange?.(true);
+                        // Xong timer thì quay về trạng thái ban đầu và ngừng
 					} else {
 						setCurrentMode("focus");
 						setTimer(configFocusTime * 60);
 						onFocusModeChange?.(true); // Quay lại focus
+						setIsRunning(true); // Tự động bật timer tập trung
 					}
 				}
 			} else if (isRunning) {
