@@ -11,7 +11,7 @@ const DEFAULT_W = 320;
 const DEFAULT_H = 240;
 
 interface CameraWidgetProps {
-  onScoreUpdate?: (score: number) => void;
+  onScoreUpdate?: (sample: { score: number; ts: number }) => void;
 }
 
 const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {

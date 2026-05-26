@@ -1,7 +1,7 @@
 // Tên file: app/components/FocusChartWidget.tsx
 "use client";
 
-import React, { FC, useEffect, useRef, useState } from "react";
+import React, { FC, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
 	LineChart,
@@ -18,60 +18,71 @@ export interface FocusDataPoint {
 	focus: number | null;
 }
 
+interface FocusSample {
+	score: number;
+	ts: number;
+}
+
 const glassEffect =
 	"bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg";
 
 interface FocusChartWidgetProps {
 	isRunning: boolean;
-	currentFocusScore?: number;
+	sample?: FocusSample | null;
 }
 
 
-const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, currentFocusScore }) => {
-	const [focusData, setFocusData] = useState<FocusDataPoint[]>([]);
-	const startTimeRef = useRef<number | null>(null);
-	const currentFocus = focusData.length > 0 ? focusData[focusData.length - 1].focus : 0;
-	const latestTime = focusData.length > 0 ? focusData[focusData.length - 1].time : 0;
-	const windowStart = Math.max(0, latestTime - 59);
-	const focusByTime = new Map<number, number>(
-		focusData.map((point) => [point.time, point.focus])
-	);
-	const chartData: FocusDataPoint[] = Array.from({ length: 60 }, (_, i) => {
-		const absTime = windowStart + i;
-		return {
-			time: i,
-			focus: focusByTime.has(absTime) ? (focusByTime.get(absTime) as number) : null,
-		};
-	});
-	const visibleChartData = chartData;
+const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, sample }) => {
+	const [focusBySecond, setFocusBySecond] = useState<Map<number, number>>(new Map());
+	const [latestSecond, setLatestSecond] = useState<number>(0);
+	const sessionStartTsRef = useRef<number | null>(null);
+
+	const currentFocus = useMemo(() => {
+		const value = focusBySecond.get(latestSecond);
+		return typeof value === "number" ? value : 0;
+	}, [focusBySecond, latestSecond]);
 
 	useEffect(() => {
-		let focusInterval: NodeJS.Timeout | null = null;
-		if (isRunning) {
-			if (startTimeRef.current === null) {
-				startTimeRef.current = Date.now();
-				setFocusData([{ time: 0, focus: 0 }]);
-			}
-			focusInterval = setInterval(() => {
-				const elapsedSec = Math.floor(
-					(Date.now() - (startTimeRef.current as number)) / 1000
-				);
-				const nextFocus =
-					typeof currentFocusScore === "number" ? currentFocusScore : 0;
-				setFocusData((prev) => {
-					const next = [...prev, { time: elapsedSec, focus: nextFocus }];
-					const minTime = Math.max(0, elapsedSec - 59);
-					return next.filter((point) => point.time >= minTime);
-				});
-			}, 1000);
-		} else {
-			startTimeRef.current = null;
-			setFocusData([]);
+		if (!isRunning) {
+			sessionStartTsRef.current = null;
+			setFocusBySecond(new Map());
+			setLatestSecond(0);
+			return;
 		}
-		return () => {
-			if (focusInterval) clearInterval(focusInterval);
-		};
-	}, [isRunning, currentFocusScore]);
+		if (!sample) return;
+
+		if (sessionStartTsRef.current === null) {
+			sessionStartTsRef.current = sample.ts;
+		}
+
+		const second = Math.max(
+			0,
+			Math.floor((sample.ts - sessionStartTsRef.current) / 1000)
+		);
+		setLatestSecond(second);
+		setFocusBySecond((prev) => {
+			const next = new Map(prev);
+			next.set(second, sample.score);
+			const minSecond = Math.max(0, second - 59);
+			for (const key of next.keys()) {
+				if (key < minSecond) next.delete(key);
+			}
+			return next;
+		});
+	}, [isRunning, sample]);
+
+	const windowStart = Math.max(0, latestSecond - 59);
+	const chartData: FocusDataPoint[] = useMemo(() => {
+		let carry: number | null = null;
+		const data: FocusDataPoint[] = [];
+		for (let i = 0; i < 60; i++) {
+			const second = windowStart + i;
+			const value = focusBySecond.get(second);
+			if (typeof value === "number") carry = value;
+			data.push({ time: i, focus: carry });
+		}
+		return data;
+	}, [focusBySecond, windowStart]);
 
 	return (
 		<div className={cn("w-full h-full px-4 pt-3 flex flex-col", glassEffect)}>
