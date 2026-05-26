@@ -99,7 +99,7 @@ const FocusChartWidget: FC<FocusChartWidgetProps> = ({ isRunning, sample }) => {
 			<div className="flex-1">
 				<ResponsiveContainer width="100%" height="90%">
 					<LineChart
-						data={visibleChartData}
+						data={chartData}
 						margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
 					>
 						<CartesianGrid strokeDasharray="3 3" stroke="#ffffff1a" />
