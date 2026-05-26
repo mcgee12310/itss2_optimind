@@ -3,6 +3,16 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { FocusEstimator } from "@/lib/focus-estimator";
 
+function isIgnoredMediapipeCpuInfoError(error: unknown) {
+  if (typeof error === "string") {
+    return error.includes("Created TensorFlow Lite XNNPACK delegate for CPU.");
+  }
+  if (error instanceof Error) {
+    return error.message.includes("Created TensorFlow Lite XNNPACK delegate for CPU.");
+  }
+  return false;
+}
+
 /**
  * useEngagementAnalyzer
  *
@@ -36,6 +46,7 @@ export function useEngagementAnalyzer(
   const noFaceCountRef = useRef<number>(0);
   const focusScoreRef = useRef<number>(0);
   const meshReadyRef = useRef<boolean>(false);
+  const restoreConsoleRef = useRef<(() => void) | null>(null);
 
   // Keep refs in sync
   useEffect(() => { isActiveRef.current = isActive; }, [isActive]);
@@ -48,6 +59,60 @@ export function useEngagementAnalyzer(
   function evaluateEngagement(score: number) {
     return score >= 60;
   }
+
+  const installMediapipeConsoleFilter = useCallback(() => {
+    if (restoreConsoleRef.current) return;
+
+    const shouldIgnore = (args: unknown[]) => {
+      for (const arg of args) {
+        const text =
+          typeof arg === "string"
+            ? arg
+            : arg instanceof Error
+              ? arg.message
+              : "";
+        if (
+          text.includes("Created TensorFlow Lite XNNPACK delegate for CPU.") ||
+          text.includes("INFO: Created TensorFlow Lite XNNPACK delegate for CPU.")
+        ) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const original = {
+      log: console.log,
+      info: console.info,
+      warn: console.warn,
+      error: console.error,
+    };
+
+    console.log = (...args: unknown[]) => {
+      if (shouldIgnore(args)) return;
+      original.log(...args);
+    };
+    console.info = (...args: unknown[]) => {
+      if (shouldIgnore(args)) return;
+      original.info(...args);
+    };
+    console.warn = (...args: unknown[]) => {
+      if (shouldIgnore(args)) return;
+      original.warn(...args);
+    };
+    console.error = (...args: unknown[]) => {
+      if (shouldIgnore(args)) return;
+      original.error(...args);
+    };
+
+    restoreConsoleRef.current = () => {
+      console.log = original.log;
+      console.info = original.info;
+      console.warn = original.warn;
+      console.error = original.error;
+      restoreConsoleRef.current = null;
+    };
+  }, []);
 
   // ── Camera ────────────────────────────────────────────────────────────────
   const startCamera = useCallback(async () => {
@@ -162,6 +227,9 @@ export function useEngagementAnalyzer(
               }
             }
           } catch (err) {
+            if (isIgnoredMediapipeCpuInfoError(err)) {
+              return;
+            }
             console.error("[Analyzer] Detection error:", err);
           }
         }
@@ -185,10 +253,12 @@ export function useEngagementAnalyzer(
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   // Load MediaPipe once on mount
   useEffect(() => {
+    installMediapipeConsoleFilter();
     loadFaceMesh();
     return () => {
       stopLoop();
       stopCamera();
+      restoreConsoleRef.current?.();
     };
   }, []);
 

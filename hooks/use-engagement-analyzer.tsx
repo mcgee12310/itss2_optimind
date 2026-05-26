@@ -10,7 +10,7 @@ interface VideoEngagementAnalyzerProps {
 
 export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true }: VideoEngagementAnalyzerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // canvas removed to avoid extra repaints (drawing was disabled in code)
   const [status, setStatus] = useState<string>("Đang khởi tạo...");
   const [engaged, setEngaged] = useState<boolean | null>(null);
   const [focusScore, setFocusScore] = useState<number>(0);
@@ -256,19 +256,7 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
         playsInline
         muted
       />
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={480}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
+      {/* canvas removed to reduce repainting and avoid flicker */}
     </div>
   );
 }
