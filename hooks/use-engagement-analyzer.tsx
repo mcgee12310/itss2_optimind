@@ -10,59 +10,74 @@ interface VideoEngagementAnalyzerProps {
 
 export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true }: VideoEngagementAnalyzerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // canvas removed to avoid extra repaints (drawing was disabled in code)
   const [status, setStatus] = useState<string>("Đang khởi tạo...");
   const [engaged, setEngaged] = useState<boolean | null>(null);
-  const [focusScore, setFocusScore] = useState<number>(100);
+  const [focusScore, setFocusScore] = useState<number>(0);
   const [isCalibrated, setIsCalibrated] = useState<boolean>(false);
   const focusEstimatorRef = useRef<FocusEstimator>(new FocusEstimator());
-  
+
   // Refs để điều khiển processing
   const isProcessingRef = useRef<boolean>(false);
   const animationIdRef = useRef<number | null>(null);
   const faceMeshRef = useRef<any>(null);
   const lastScoreUpdateTimeRef = useRef<number>(0);
   const lastDetectionTimeRef = useRef<number>(0);
-  const SCORE_UPDATE_INTERVAL = 1000;
-  const DETECTION_INTERVAL = 100; // Throttle: chỉ detect mỗi 100ms (~10fps) thay vì 60fps
-  const NO_FACE_PENALTY = 100; // Trừ mạnh khi không thấy khuôn mặt
+  const noFaceCounterRef = useRef<number>(0);
+  const SCORE_UPDATE_INTERVAL = 500; // Cập nhật UI mỗi 500ms (2fps) để có độ trả hồi tốt
+  const DETECTION_INTERVAL = 50; // Detect mỗi 50ms (~20fps) để accuracy cao hơn
+  const NO_FACE_DECAY = 0.85; // Nhân điểm với 0.85 mỗi frame không thấy khuôn mặt (giảm mềm hơn)
 
   // Rule: Nếu mắt nhìn vào camera và không chớp mắt quá nhiều => Engaged
   function evaluateEngagement(score: number): boolean {
-    return score >= 65; // Giảm từ 70 -> 65 (phù hợp với penalty mới nghiêm ngặt hơn)
+    return score >= 60; // Threshold dựa trên thực tế engagement
   }
 
   // Callback xử lý kết quả phân tích
   const onResults = (results: any) => {
     const faces = results?.faceLandmarks || [];
-    // Nếu không phát hiện khuôn mặt: trừ điểm mạnh và cập nhật chart mỗi tick
+    const now = Date.now();
+
+    // Nếu không phát hiện khuôn mặt: giảm điểm mềm hơn mỗi frame
     if (!faces.length) {
-      const now = Date.now();
+      noFaceCounterRef.current++;
+      if (noFaceCounterRef.current % 5 === 0) {
+        setStatus(`📭 Không tìm thấy khuôn mặt (${noFaceCounterRef.current})`);
+      }
+
+      // Chỉ cập nhật UI mỗi 500ms khi không có mặt
       if (now - lastScoreUpdateTimeRef.current >= SCORE_UPDATE_INTERVAL) {
         lastScoreUpdateTimeRef.current = now;
-        const next = Math.max(0, focusScore - NO_FACE_PENALTY);
+        const next = Math.round(focusScore * NO_FACE_DECAY);
         setFocusScore(next);
         setEngaged(false);
         if (onScoreUpdate) onScoreUpdate(next);
       }
       return;
     }
+
+    noFaceCounterRef.current = 0;
     const faceLandmarks = faces[0];
-    
+
+    // Debug: kiểm tra xem landmarks có hợp lệ không
+    if (!Array.isArray(faceLandmarks) || faceLandmarks.length === 0) {
+      console.warn("[Engagement] Invalid landmarks:", faceLandmarks);
+      return;
+    }
+
     // Tính điểm tập trung bằng FocusEstimator (mỗi frame để tích lũy data)
     const score = focusEstimatorRef.current.estimate(faceLandmarks);
-    
-    // Chỉ cập nhật UI mỗi 1 giây
-    const now = Date.now();
+
+    // Cập nhật UI mỗi 500ms để có độ responsiveness tốt
     if (now - lastScoreUpdateTimeRef.current >= SCORE_UPDATE_INTERVAL) {
       lastScoreUpdateTimeRef.current = now;
-      
+
       setFocusScore(score);
-      
+
       // Đánh giá trạng thái tập trung
       const isEngaged = evaluateEngagement(score);
       setEngaged(isEngaged);
-      setStatus(isEngaged ? `Đang tập trung (${score}/100)` : `Không tập trung (${score}/100)`);
+      setStatus(isEngaged ? `✓ Tập trung (${score}/100)` : `✗ Không tập trung (${score}/100)`);
       if (onScoreUpdate) onScoreUpdate(score);
     }
 
@@ -110,6 +125,7 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
     };
 
     // Tải Mediapipe Tasks Vision FaceLandmarker (tránh lỗi Module.arguments)
+    // Tải Mediapipe Tasks Vision FaceLandmarker (tránh lỗi Module.arguments)
     const loadFaceMesh = async () => {
       try {
         const vision = await import("@mediapipe/tasks-vision" as const);
@@ -145,7 +161,8 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
     };
 
     const setupFaceMesh = () => {
-      setStatus("Sẵn sàng nhận diện khuôn mặt");
+      setStatus("📷 Đã sẵn sàng - Quay vào camera");
+      setIsCalibrated(true);
       // Nếu isActive đã true, bắt đầu ngay
       if (isActive) {
         isProcessingRef.current = true;
@@ -154,7 +171,7 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
 
     // Tăng độ nhạy của điểm số (phản ứng nhanh hơn)
     try {
-      focusEstimatorRef.current.setSmoothing(0.7);
+      focusEstimatorRef.current.setSmoothing(0.6); // Smoothing 0.6 để balance giữa responsiveness và stability
     } catch (e) {
       // ignore runtime override errors
     }
@@ -179,7 +196,7 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
 
       if (videoRef.current && faceMeshRef.current) {
         const now = Date.now();
-        // Throttle: chỉ chạy detectForVideo mỗi 100ms (~10fps)
+        // Throttle: chỉ chạy detectForVideo mỗi 50ms (~20fps)
         if (now - lastDetectionTimeRef.current >= DETECTION_INTERVAL) {
           lastDetectionTimeRef.current = now;
           const video = videoRef.current;
@@ -192,7 +209,7 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
           }
         }
       }
-      
+
       if (isActive && isProcessingRef.current) {
         animationIdRef.current = requestAnimationFrame(processFrame);
       }
@@ -239,19 +256,7 @@ export default function VideoEngagementAnalyzer({ onScoreUpdate, isActive = true
         playsInline
         muted
       />
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={480}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-        }}
-      />
+      {/* canvas removed to reduce repainting and avoid flicker */}
     </div>
   );
 }

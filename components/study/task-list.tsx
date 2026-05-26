@@ -1,289 +1,288 @@
-// Tên file: app/components/TaskListWidget.tsx
 "use client";
 
-import { useState, FC, ChangeEvent } from "react";
+import { useState, FC, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-	Plus,
-	X,
-	Trash2,
-	MoreVertical, // MỚI: Icon 3 chấm
-	Pencil, // MỚI: Icon Edit
-	Check, // MỚI: Icon Lưu
+  Plus,
+  X,
+  ShieldOff,
+  ShieldCheck,
+  Trash2,
+  Globe,
+  Puzzle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useExtensionSync } from "@/hooks/useExtensionSync";
 
-// Hàm tiện ích
 const glassEffect =
-	"bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg";
+  "bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg";
 
-// MỚI: Cập nhật Định nghĩa kiểu Task
-interface Task {
-	id: string;
-	text: string;
-	note: string; // Thêm ghi chú
-	completed: boolean;
-}
-
-// Định nghĩa Props
-interface TaskListWidgetProps {
-	show: boolean;
-	onClose: () => void;
-}
-
-// MỚI: Dữ liệu ban đầu
-const initialTasks: Task[] = [
-	// {
-	// 	id: "1",
-	// 	text: "Làm bài tập C++ (Tree)",
-	// 	note: "Chương 5, bài 1-3",
-	// 	completed: false,
-	// },
-	// { id: "2", text: "Viết báo cáo Optimind", note: "", completed: true },
-	// {
-	// 	id: "3",
-	// 	text: "Ôn tập chương 3 Giải tích",
-	// 	note: "Tập trung vào tích phân",
-	// 	completed: false,
-	// },
+const PRESET_SITES = [
+  { id: "facebook", label: "Facebook", url: "facebook.com" },
+  { id: "youtube", label: "YouTube", url: "youtube.com" },
+  { id: "tiktok", label: "TikTok", url: "tiktok.com" },
+  { id: "instagram", label: "Instagram", url: "instagram.com" },
+  { id: "zalo", label: "Zalo", url: "zalo.me" },
+  { id: "messenger", label: "Messenger", url: "messenger.com" },
+  { id: "telegram", label: "Telegram", url: "web.telegram.org" },
+  { id: "twitter", label: "X (Twitter)", url: "x.com" },
+  { id: "reddit", label: "Reddit", url: "reddit.com" },
+  { id: "shopee", label: "Shopee", url: "shopee.vn" },
 ];
 
-// Component Task List
-const TaskListWidget: FC<TaskListWidgetProps> = ({ show, onClose }) => {
-	// State quản lý tasks
-	const [tasks, setTasks] = useState<Task[]>(initialTasks);
-	const [newTaskText, setNewTaskText] = useState<string>("");
+const getFavicon = (url: string) =>
+  `https://www.google.com/s2/favicons?domain=${url}&sz=32`;
 
-	// MỚI: State cho việc chỉnh sửa
-	const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-	const [editingText, setEditingText] = useState<string>("");
-	const [editingNote, setEditingNote] = useState<string>("");
+interface BlockedSite {
+  id: string;
+  url: string;
+  label?: string;
+}
 
-	// Hàm thêm Task
-	const handleAddTask = () => {
-		if (newTaskText.trim() === "") return;
-		const newTask: Task = {
-			id: crypto.randomUUID(),
-			text: newTaskText,
-			note: "", // Ghi chú ban đầu trống
-			completed: false,
-		};
-		setTasks([newTask, ...tasks]); // Thêm vào đầu danh sách
-		setNewTaskText(""); // Xóa input
-	};
+interface SiteBlockerWidgetProps {
+  show: boolean;
+  onClose: () => void;
+}
 
-	// Hàm xóa Task
-	const handleDeleteTask = (id: string) => {
-		setTasks(tasks.filter((task) => task.id !== id));
-	};
+const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
+  const ext = useExtensionSync();
+  const [blockedSites, setBlockedSitesLocal] = useState<BlockedSite[]>([]);
+  const [inputUrl, setInputUrl] = useState("");
+  const [isBlocking, setIsBlockingLocal] = useState(false);
 
-	// Hàm toggle Task
-	const handleToggleTask = (id: string) => {
-		setTasks(
-			tasks.map((task: Task) =>
-				task.id === id ? { ...task, completed: !task.completed } : task
-			)
-		);
-	};
+  // Load initial state from extension once it responds
+  useEffect(() => {
+    if (!ext.installed) return;
+    setBlockedSitesLocal(
+      ext.blockedSites.map((url) => {
+        const preset = PRESET_SITES.find((p) => p.url === url);
+        return preset
+          ? { id: preset.id, url: preset.url, label: preset.label }
+          : { id: url, url };
+      }),
+    );
+    setIsBlockingLocal(ext.isEnabled);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ext.installed]);
 
-	// MỚI: Bắt đầu chỉnh sửa
-	const handleStartEdit = (task: Task) => {
-		setEditingTaskId(task.id);
-		setEditingText(task.text);
-		setEditingNote(task.note);
-	};
+  const syncToExtension = (sites: BlockedSite[], enabled: boolean) => {
+    if (ext.installed) {
+      ext.setBlockedSites(sites.map((s) => s.url));
+      ext.setEnabled(enabled);
+    }
+  };
 
-	// MỚI: Hủy chỉnh sửa
-	const handleCancelEdit = () => {
-		setEditingTaskId(null);
-		setEditingText("");
-		setEditingNote("");
-	};
+  const isPresetBlocked = (presetId: string) =>
+    blockedSites.some((s) => s.id === presetId);
 
-	// MỚI: Lưu chỉnh sửa
-	const handleSaveEdit = (id: string) => {
-		setTasks(
-			tasks.map((task: Task) =>
-				task.id === id
-					? { ...task, text: editingText, note: editingNote }
-					: task
-			)
-		);
-		handleCancelEdit(); // Reset state
-	};
+  const togglePreset = (preset: (typeof PRESET_SITES)[0]) => {
+    const next = isPresetBlocked(preset.id)
+      ? blockedSites.filter((s) => s.id !== preset.id)
+      : [
+          ...blockedSites,
+          { id: preset.id, url: preset.url, label: preset.label },
+        ];
+    setBlockedSitesLocal(next);
+    syncToExtension(next, isBlocking);
+  };
 
-	if (!show) {
-		return null; // Ẩn component nếu show={false}
-	}
+  const handleAddCustomUrl = () => {
+    const raw = inputUrl
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0];
+    if (!raw) return;
+    if (blockedSites.some((s) => s.url === raw)) {
+      setInputUrl("");
+      return;
+    }
+    const next = [...blockedSites, { id: crypto.randomUUID(), url: raw }];
+    setBlockedSitesLocal(next);
+    syncToExtension(next, isBlocking);
+    setInputUrl("");
+  };
 
-	return (
-		<div
-			className={cn(
-				"w-100 h-full max-h-90 flex flex-col", // Tăng chiều cao 1 chút
-				glassEffect,
-				"animate-in fade-in zoom-in-95"
-			)}
-		>
-			{/* Header */}
-			<div className="flex items-center justify-between p-3 border-b border-white/10">
-				<p className="text-lg font-semibold">Tasks</p>
-				<div className="flex gap-1">
-					{/* Nút X để đóng */}
-					<Button
-						variant="ghost"
-						size="icon"
-						className="h-8 w-8 rounded-full hover:bg-red-500/30"
-						onClick={onClose} // Gọi prop onClose
-					>
-						<X className="h-4 w-4" />
-					</Button>
-				</div>
-			</div>
+  const handleRemove = (id: string) => {
+    const next = blockedSites.filter((s) => s.id !== id);
+    setBlockedSitesLocal(next);
+    syncToExtension(next, isBlocking);
+  };
 
-			{/* Khu vực nhập Task mới */}
-			<div className="flex gap-2 p-3 border-b border-white/10">
-				<Input
-					placeholder="Thêm task mới..."
-					className="bg-white/10 border-white/30 h-9 text-sm placeholder:text-white"
-					value={newTaskText}
-					onChange={(e) => setNewTaskText(e.target.value)}
-					onKeyDown={(e) => e.key === "Enter" && handleAddTask()}
-				/>
-				<Button
-					size="icon"
-					className="h-9 w-9 shrink-0"
-					onClick={handleAddTask}
-				>
-					<Plus className="h-4 w-4" />
-				</Button>
-			</div>
+  const handleToggleBlock = () => {
+    const next = !isBlocking;
+    setIsBlockingLocal(next);
+    syncToExtension(blockedSites, next);
+  };
 
-			{/* Danh sách Tasks */}
-			<ScrollArea className="flex-1 p-3 overflow-hidden">
-				<div className="flex flex-col gap-3">
-					{tasks.map((task) => (
-						<div
-							key={task.id}
-							className="flex items-center gap-3 group w-full"
-						>
-							{editingTaskId === task.id ? (
-								// --- CHẾ ĐỘ EDIT (INLINE) ---
-								<div className="flex-1 flex flex-col gap-2">
-									<Input
-										value={editingText}
-										onChange={(
-											e: ChangeEvent<HTMLInputElement>
-										) => setEditingText(e.target.value)}
-										className="h-8 text-sm bg-white/20"
-										placeholder="Tên task..."
-									/>
-									<Input
-										value={editingNote}
-										onChange={(
-											e: ChangeEvent<HTMLInputElement>
-										) => setEditingNote(e.target.value)}
-										className="h-8 text-xs bg-white/10"
-										placeholder="Thêm ghi chú..."
-									/>
-									<div className="flex gap-2 justify-end">
-										<Button
-											variant="ghost"
-											size="icon"
-											className="h-7 w-7 text-gray-300 hover:text-white"
-											onClick={handleCancelEdit}
-										>
-											<X className="h-4 w-4" />
-										</Button>
-										<Button
-											size="icon"
-											className="h-7 w-7 bg-green-500 hover:bg-green-600"
-											onClick={() =>
-												handleSaveEdit(task.id)
-											}
-										>
-											<Check className="h-4 w-4" />
-										</Button>
-									</div>
-								</div>
-							) : (
-								// --- CHẾ ĐỘ HIỂN THỊ ---
-								<>
-									<Checkbox
-										id={task.id}
-										checked={task.completed}
-										onCheckedChange={() =>
-											handleToggleTask(task.id)
-										}
-										className="mt-1" // Căn checkbox với text
-									/>
-									<div className="flex-1 space-y-0.5">
-										<label
-											htmlFor={task.id}
-											className={cn(
-												"text-sm font-medium leading-none cursor-pointer",
-												task.completed
-													? "line-through text-gray-400"
-													: "text-white"
-											)}
-										>
-											{task.text}
-										</label>
-										{/* MỚI: Hiển thị ghi chú */}
-										{task.note && (
-											<p className="text-xs text-gray-400">
-												{task.note}
-											</p>
-										)}
-									</div>
-									{/* THAY ĐỔI: Nút 3 chấm (Dropdown) */}
-									<DropdownMenu>
-										<DropdownMenuTrigger asChild>
-											<Button
-												variant="ghost"
-												size="icon"
-												className="h-7 w-7 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:text-white"
-											>
-												<MoreVertical className="h-4 w-4" />
-											</Button>
-										</DropdownMenuTrigger>
-										<DropdownMenuContent className="bg-black/70 backdrop-blur-md border-white/20 text-white">
-											<DropdownMenuItem
-												onClick={() =>
-													handleStartEdit(task)
-												}
-												className="cursor-pointer"
-											>
-												<Pencil className="mr-2 h-4 w-4" />
-												Chỉnh sửa
-											</DropdownMenuItem>
-											<DropdownMenuItem
-												onClick={() =>
-													handleDeleteTask(task.id)
-												}
-												className="cursor-pointer text-red-400 focus:text-red-400"
-											>
-												<Trash2 className="mr-2 h-4 w-4" />
-												Xóa
-											</DropdownMenuItem>
-										</DropdownMenuContent>
-									</DropdownMenu>
-								</>
-							)}
-						</div>
-					))}
-				</div>
-			</ScrollArea>
-		</div>
-	);
+  if (!show) return null;
+
+  const customSites = blockedSites.filter(
+    (s) => !PRESET_SITES.some((p) => p.id === s.id),
+  );
+
+  return (
+    <div
+      className={cn(
+        "w-150 h-full max-h-90 flex flex-col",
+        glassEffect,
+        "animate-in fade-in zoom-in-95",
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between p-3 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-emerald-400" />
+          <p className="text-lg font-semibold">Chặn trang web</p>
+          {ext.installed ? (
+            <span className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+              <Puzzle className="h-3 w-3" /> Đã kết nối
+            </span>
+          ) : (
+            <span className="flex items-center gap-1 text-xs bg-white/10 text-white/40 border border-white/10 px-2 py-0.5 rounded-full">
+              <Puzzle className="h-3 w-3" /> Chưa cài extension
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {!ext.installed ? null : (
+            <button
+              onClick={handleToggleBlock}
+              className={cn(
+                "text-xs font-semibold px-3 py-1 rounded-full transition-all duration-200",
+                isBlocking
+                  ? "bg-red-500/80 hover:bg-red-600/80 text-white"
+                  : "bg-emerald-500/80 hover:bg-emerald-600/80 text-white",
+              )}
+            >
+              {isBlocking ? "Đang chặn" : "Bắt đầu chặn"}
+            </button>
+          )}
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-red-500/30"
+            onClick={onClose}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        {/* Nhập URL thủ công */}
+        <div className="flex gap-2 p-3 border-b border-white/10">
+          <div className="relative flex-1">
+            <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+            <Input
+              placeholder="Nhập domain... (vd: discord.com)"
+              className="bg-white/10 border-white/30 h-9 text-sm pl-8 placeholder:text-white/40"
+              value={inputUrl}
+              onChange={(e) => setInputUrl(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddCustomUrl()}
+            />
+          </div>
+          <Button
+            size="icon"
+            className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30"
+            onClick={handleAddCustomUrl}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Trang phổ biến */}
+        <div className="p-3 border-b border-white/10">
+          <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
+            Chọn nhanh
+          </p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {PRESET_SITES.map((site) => {
+              const blocked = isPresetBlocked(site.id);
+              return (
+                <button
+                  key={site.id}
+                  onClick={() => togglePreset(site)}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150",
+                    blocked
+                      ? "bg-red-500/30 border border-red-400/40 text-red-200"
+                      : "bg-white/10 border border-white/10 text-white/80 hover:bg-white/20",
+                  )}
+                >
+                  <img
+                    src={getFavicon(site.url)}
+                    alt={site.label}
+                    className="w-4 h-4 rounded-sm shrink-0"
+                  />
+                  <span className="truncate">{site.label}</span>
+                  {blocked && (
+                    <ShieldOff className="h-3 w-3 ml-auto text-red-300 shrink-0" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Danh sách trang tùy chỉnh */}
+        {customSites.length > 0 && (
+          <div className="p-3">
+            <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
+              Tùy chỉnh
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {customSites.map((site) => (
+                <div
+                  key={site.id}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/20 border border-red-400/30"
+                >
+                  <Globe className="h-3.5 w-3.5 text-red-300 shrink-0" />
+                  <span className="text-sm text-red-100 flex-1 truncate">
+                    {site.url}
+                  </span>
+                  <button
+                    onClick={() => handleRemove(site.id)}
+                    className="text-white/40 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {blockedSites.length === 0 && (
+          <div className="p-6 text-center text-white/30 text-sm">
+            <ShieldOff className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            Chưa chặn trang nào
+          </div>
+        )}
+      </div>
+
+      {/* Footer: tóm tắt */}
+      {blockedSites.length > 0 && (
+        <div className="px-3 py-2 border-t border-white/10 flex items-center justify-between">
+          <span className="text-xs text-white/40">
+            {blockedSites.length} trang bị chặn
+          </span>
+          <span
+            className={cn(
+              "text-xs font-semibold",
+              isBlocking ? "text-red-400" : "text-white/40",
+            )}
+          >
+            {isBlocking ? "🔴 Đang hoạt động" : "⚪ Chưa bật"}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 };
 
-export default TaskListWidget;
+export default SiteBlockerWidget;

@@ -1,128 +1,79 @@
 "use client";
 
-import DraggableCamera from "@/components/app/camera";
-import UserHeader from "@/components/app/header";
-import LogoHeader from "@/components/app/logo-header";
-import NavSidebar from "@/components/app/sidebar";
-import ControlToolbar from "@/components/app/toolbar";
-import { CameraProvider } from "@/hooks/useCamera";
-import { DashboardStatsProvider, useDashboardStats } from "@/hooks/useDashboardStats";
-import { cacheUtils } from "@/hooks/useCachedData";
-import { usePathname } from "next/navigation";
+import ScoreWidget from "@/components/app/score-widget";
+import ExtensionGuideModal from "@/components/app/ExtensionGuideModal";
+import { ScoreProvider } from "@/hooks/useScore";
+import { cn } from "@/lib/utils";
+import { Puzzle } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
-type NavPageId =
-	| "/study"
-	| "/chat"
-	| "/study-room"
-	| "/tasks"
-	| "/calendar"
-	| "/gamification"
-	| "/history"
-	| "/ranking";
+const DEFAULT_BACKGROUND =
+  "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto=format&fit=crop";
 
-const DEFAULT_BACKGROUND = "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?q=80&w=2070&auto=format&fit=crop";
-const BACKGROUND_CACHE_KEY = "background_url";
-
-// Component con để sử dụng hook
 const AppLayoutContent = ({ children }: { children: React.ReactNode }) => {
-	// Initialize background from cache for instant loading
-	const [backgroundUrl, setBackgroundUrl] = useState<string>(() => {
-		const cached = cacheUtils.get<string>(BACKGROUND_CACHE_KEY);
-		return cached || DEFAULT_BACKGROUND;
-	});
-	const activePage = usePathname() as NavPageId;
-	const { stats, loading } = useDashboardStats();
+  const [isUiVisible, setIsUiVisible] = useState<boolean>(true);
+  const [showExtModal, setShowExtModal] = useState<boolean>(false);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-	// MỚI: State cho việc ẩn/hiện UI
-	const [isUiVisible, setIsUiVisible] = useState<boolean>(true);
-	const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const resetUiTimer = useCallback(() => {
+    setIsUiVisible(true);
+    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    inactivityTimerRef.current = setTimeout(() => setIsUiVisible(false), 10000);
+  }, []);
 
-	// --- MỚI: Logic ẩn/hiện UI ---
-	const resetUiTimer = useCallback(() => {
-		// 1. Hiển thị UI
-		setIsUiVisible(true);
+  useEffect(() => {
+    window.addEventListener("mousemove", resetUiTimer);
+    resetUiTimer();
+    return () => {
+      window.removeEventListener("mousemove", resetUiTimer);
+      if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
+    };
+  }, [resetUiTimer]);
 
-		// 2. Xóa timer cũ (nếu có)
-		if (inactivityTimerRef.current) {
-			clearTimeout(inactivityTimerRef.current);
-		}
+  return (
+    <div
+      className="h-screen w-screen text-white overflow-hidden"
+      style={{
+        backgroundImage: `url(${DEFAULT_BACKGROUND})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}
+    >
+      {/* === Score Widget (góc trái — thay logo) === */}
+      {/* <ScoreWidget isUiVisible={isUiVisible} /> */}
 
-		// 3. Đặt timer mới để ẩn UI sau 5 giây
-		inactivityTimerRef.current = setTimeout(() => {
-			setIsUiVisible(false);
-		}, 10000); // 5 giây
-	}, []);
+      {/* === Extension Guide Button === */}
+      <button
+        onClick={() => setShowExtModal(true)}
+        className={cn(
+          "absolute left-2 z-30 mt-2",
+          "bg-black/40 backdrop-blur-md border border-white/20 rounded-xl shadow-lg",
+          "flex items-center gap-2 px-3 py-2",
+          "text-xs font-medium text-white/70 hover:text-white hover:bg-black/60",
+          "transition-all duration-300 ease-in-out",
+          isUiVisible
+            ? "opacity-100 translate-y-0"
+            : "opacity-0 -translate-y-full pointer-events-none",
+        )}
+        title="Hướng dẫn cài extension chặn web"
+      >
+        <Puzzle className="w-4 h-4 text-indigo-400" />
+        <span>Cài Extension</span>
+      </button>
 
-	// Effect để gắn listener cho mousemove
-	useEffect(() => {
-		// Gắn listener
-		window.addEventListener("mousemove", resetUiTimer);
+      {children}
 
-		// Bắt đầu timer ngay khi tải trang
-		resetUiTimer();
-
-		// Dọn dẹp
-		return () => {
-			window.removeEventListener("mousemove", resetUiTimer);
-			if (inactivityTimerRef.current) {
-				clearTimeout(inactivityTimerRef.current);
-			}
-		};
-	}, [resetUiTimer]);
-
-	// Handle background change with caching
-	const handleBackgroundChange = useCallback((url: string) => {
-		setBackgroundUrl(url);
-		cacheUtils.set(BACKGROUND_CACHE_KEY, url);
-	}, []);
-
-	return (
-		<div>
-			<CameraProvider>
-				<div
-					className="h-screen w-screen text-white overflow-hidden"
-					style={{
-						backgroundImage: `url(${backgroundUrl})`,
-						backgroundSize: "cover",
-						backgroundPosition: "center",
-					}}
-				>
-					{/* Logo Header */}
-					<LogoHeader isUiVisible={isUiVisible} />
-					{/* === 1. Sidebar Trái === */}
-					<NavSidebar
-						activePage={activePage}
-						isUiVisible={isUiVisible}
-					/>
-
-					{/* === 2. Toolbar Phải === */}
-					<ControlToolbar
-						onChangeBackground={handleBackgroundChange}
-						isUiVisible={isUiVisible}
-					/>
-
-					{/* === 3. Header Người dùng === */}
-					<UserHeader
-						streak={stats.streak}
-						studyHoursToday={stats.studyHoursToday}
-						isUiVisible={isUiVisible}
-					/>
-
-					{/* === 4. Camera Di động === */}
-					<DraggableCamera />
-					{children}
-				</div>
-			</CameraProvider>
-		</div>
-	);
+      <ExtensionGuideModal open={showExtModal} onOpenChange={setShowExtModal} />
+    </div>
+  );
 };
 
-// Component chính bọc Provider
-export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-	return (
-		<DashboardStatsProvider>
-			<AppLayoutContent>{children}</AppLayoutContent>
-		</DashboardStatsProvider>
-	);
+export default function AppLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <ScoreProvider>
+      <AppLayoutContent>{children}</AppLayoutContent>
+    </ScoreProvider>
+  );
 }
