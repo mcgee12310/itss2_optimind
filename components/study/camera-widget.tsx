@@ -12,9 +12,15 @@ const DEFAULT_H = 240;
 
 interface CameraWidgetProps {
   onScoreUpdate?: (sample: { score: number; ts: number }) => void;
+  onCameraReady?: (isReady: boolean) => void;
+  isTimerRunning?: boolean;
 }
 
-const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
+const CameraWidget: FC<CameraWidgetProps> = ({
+  onScoreUpdate,
+  onCameraReady,
+  isTimerRunning = false
+}) => {
   const [isOn, setIsOn] = useState(false);
   const [size, setSize] = useState({ w: DEFAULT_W, h: DEFAULT_H });
 
@@ -23,8 +29,18 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
     useEngagementAnalyzer(isOn, onScoreUpdate);
 
   const toggleCamera = useCallback(() => {
+    if (isTimerRunning){
+      alert("Không thể tắt camera khi đang chạy timer!");
+      return;
+    }
     setIsOn((prev) => !prev);
-  }, []);
+  }, [isTimerRunning]);
+
+  // Notify parent when camera is ready
+  useEffect(() => {
+    onCameraReady?.(cameraReady && isOn);
+  }, [cameraReady, isOn, onCameraReady]);
+
 
   // === Resize (góc phải dưới) ===
   const resizeRef = useRef<{
@@ -110,6 +126,7 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
       {/* Toggle button — top-right */}
       <button
         onClick={toggleCamera}
+        disabled={isTimerRunning}
         className={cn(
           "absolute top-2 right-2 z-10",
           "flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold transition-all",
@@ -117,6 +134,7 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
           isOn
             ? "bg-red-500/70 hover:bg-red-600/80 text-white"
             : "bg-white/20 hover:bg-white/30 text-white/80",
+          isTimerRunning && "opacity-50 cursor-not-allowed"
         )}
       >
         {isOn ? (

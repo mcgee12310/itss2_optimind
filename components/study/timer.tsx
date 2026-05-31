@@ -45,6 +45,7 @@ interface PomodoroTimerProps {
 	setIsRunning: (bool: boolean) => void;
 	// Callback báo cho parent biết đang ở chế độ focus hay break
 	onFocusModeChange?: (isFocus: boolean) => void;
+	isCameraReady?: boolean; // camera
 }
 
 // --- Component Chính: Pomodoro Timer ---
@@ -54,6 +55,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 	isRunning,
 	setIsRunning,
 	onFocusModeChange,
+	isCameraReady = false,
 }) => {
 	// === State Cài đặt Pomodoro (tính bằng phút) ===
 	const [configFocusTime, setConfigFocusTime] = useState<number>(25);
@@ -188,6 +190,12 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 	};
 
 	const toggleTimer = (): void => {
+		// ADD: Check if camera is ready
+        if (!isCameraReady) {
+            alert("Vui lòng bật camera trước khi bắt đầu");
+            return;
+        }
+
 		if (timer === 0) {
 			if (timerMode === "pomodoro") {
 				setTimer(configFocusTime * 60);
@@ -358,6 +366,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 										? "bg-yellow-400 hover:bg-yellow-500" // Pause
 										: "bg-green-500 hover:bg-green-600 text-white" // Start
 								)}
+								disabled={!isCameraReady}
 							>
 								{isRunning ? (
 									<Pause className="mr-2 h-5 w-5" />

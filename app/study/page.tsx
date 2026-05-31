@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, FC } from "react";
+import { useState, FC, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useFocusScoring } from "@/hooks/useScore";
-import { useRef, useCallback, useState as useReactState } from "react";
 
 import PomodoroTimer from "@/components/study/timer";
 import TaskListWidget from "@/components/study/task-list";
@@ -16,8 +15,9 @@ const StudyPage: FC = () => {
   const [showTasks, setShowTasks] = useState<boolean>(true);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(true);
-  const [focusScore, setFocusScore] = useReactState<number>(0);
-  const [focusSample, setFocusSample] = useReactState<FocusSample | null>(null);
+  const [focusScore, setFocusScore] = useState<number>(0);
+  const [focusSample, setFocusSample] = useState<FocusSample | null>(null);
+  const [isCameraReady, setIsCameraReady] = useState<boolean>(false);
 
   useFocusScoring(isRunning, isFocusMode);
 
@@ -44,8 +44,13 @@ const StudyPage: FC = () => {
               isRunning={isRunning}
               setIsRunning={setIsRunning}
               onFocusModeChange={setIsFocusMode}
+              isCameraReady={isCameraReady}
             />
-            <CameraWidget onScoreUpdate={handleScoreUpdate} />
+            <CameraWidget
+              onScoreUpdate={handleScoreUpdate}
+              onCameraReady={setIsCameraReady}
+              isTimerRunning={isRunning}
+            />
           </div>
 
           <div className="flex flex-col md:flex-row gap-4 md:gap-6 w-full h-auto md:h-80 justify-between pb-16 md:pb-0">
