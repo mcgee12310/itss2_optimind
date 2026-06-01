@@ -73,6 +73,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 	const [timerMode, setTimerMode] = useState<"pomodoro" | "countdown">(
 		"pomodoro"
 	);
+	const [sessionActive, setSessionActive] = useState<boolean>(false);
 
 	// === State cho Dialog Cài đặt ===
 	const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -179,6 +180,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 	// --- Handlers ---
 	const resetTimer = (): void => {
 		setIsRunning(false);
+		setSessionActive(false);
 		setCurrentMode("focus");
 		setCompletedCycles(0);
 		onFocusModeChange?.(true); // Reset về focus mode
@@ -190,7 +192,6 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 	};
 
 	const toggleTimer = (): void => {
-		// ADD: Check if camera is ready
         if (!isCameraReady) {
             alert("Vui lòng bật camera trước khi bắt đầu");
             return;
@@ -208,6 +209,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 		if (!isRunning) {
 			setIsRunning(true);
+			setSessionActive(true);
 		} else {
 			setIsRunning(false);
 		}
@@ -324,17 +326,17 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 							</Button>
 
 							{/* Nút Cài đặt */}
-							<DialogTrigger asChild disabled={isRunning}>
+							<DialogTrigger asChild disabled={isRunning || sessionActive}>
 								<Button
 									onClick={openSettings}
 									variant="ghost"
 									size="icon"
 									className={cn(
 										"h-10 w-10 rounded-full bg-white/10 border-white/30 hover:bg-white/30",
-										isRunning &&
+										(isRunning || sessionActive) &&
 											"opacity-50 cursor-not-allowed"
 									)}
-									disabled={isRunning}
+									disabled={isRunning || sessionActive}
 								>
 									<Settings className="h-5 w-5" />
 								</Button>
@@ -392,7 +394,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 					</div>
 
 					{/* === PHẦN DƯỚI (Tabs Chế độ) === */}
-					{!isRunning && (
+					{!sessionActive && (
 						<div className="w-full">
 							<Tabs
 								value={timerMode}
@@ -402,19 +404,19 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 								<TabsList
 									className={cn(
 										"grid w-full grid-cols-2 bg-black/30",
-										isRunning &&
+										sessionActive &&
 											"opacity-50 pointer-events-none"
 									)}
 								>
 									<TabsTrigger
 										value="pomodoro"
-										disabled={isRunning}
+										disabled={sessionActive}
 									>
 										Pomodoro
 									</TabsTrigger>
 									<TabsTrigger
 										value="countdown"
-										disabled={isRunning}
+										disabled={sessionActive}
 									>
 										Đếm ngược
 									</TabsTrigger>
