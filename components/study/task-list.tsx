@@ -277,7 +277,6 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
               isBlocking ? "text-red-400" : "text-white/40",
             )}
           >
-            {isBlocking ? "🔴 Đang hoạt động" : "⚪ Chưa bật"}
           </span>
         </div>
       )}
