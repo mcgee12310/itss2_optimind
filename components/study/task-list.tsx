@@ -177,25 +177,27 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
 
       <div className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {/* Nhập URL thủ công */}
-        <div className="flex gap-2 p-3 border-b border-white/10">
-          <div className="relative flex-1">
-            <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
-            <Input
-              placeholder="Nhập domain... (vd: discord.com)"
-              className="bg-white/10 border-white/30 h-9 text-sm pl-8 placeholder:text-white/40"
-              value={inputUrl}
-              onChange={(e) => setInputUrl(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddCustomUrl()}
-            />
+        {!isBlocking && (
+          <div className="flex gap-2 p-3 border-b border-white/10">
+            <div className="relative flex-1">
+              <Globe className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
+              <Input
+                placeholder="Nhập domain... (vd: discord.com)"
+                className="bg-white/10 border-white/30 h-9 text-sm pl-8 placeholder:text-white/40"
+                value={inputUrl}
+                onChange={(e) => setInputUrl(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddCustomUrl()}
+              />
+            </div>
+            <Button
+              size="icon"
+              className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30"
+              onClick={handleAddCustomUrl}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
-          <Button
-            size="icon"
-            className="h-9 w-9 shrink-0 bg-white/20 hover:bg-white/30"
-            onClick={handleAddCustomUrl}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
+        )}
 
         {/* Khi đang chặn: hiển thị danh sách tóm tắt không tương tác */}
         {isBlocking ? (
