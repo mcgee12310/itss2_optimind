@@ -53,6 +53,7 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
   const [inputUrl, setInputUrl] = useState("");
   const [isBlocking, setIsBlockingLocal] = useState(false);
   const [showExtModal, setShowExtModal] = useState(false);
+  const [showListWeb, setShowListWeb] = useState(false);
 
   // Load initial state from extension once it responds
   useEffect(() => {
@@ -196,66 +197,94 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
           </Button>
         </div>
 
-        {/* Trang phổ biến */}
-        <div className="p-3 border-b border-white/10">
-          <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
-            Chọn nhanh
-          </p>
-          <div className="grid grid-cols-2 gap-1.5">
-            {PRESET_SITES.map((site) => {
-              const blocked = isPresetBlocked(site.id);
-              return (
-                <button
+        {/* Khi đang chặn: hiển thị danh sách tóm tắt không tương tác */}
+        {isBlocking ? (
+          <div className="p-3">
+            <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
+              Trang đang bị chặn
+            </p>
+            <div className="flex flex-col gap-1.5">
+              {blockedSites.map((site) => (
+                <div
                   key={site.id}
-                  onClick={() => togglePreset(site)}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150",
-                    blocked
-                      ? "bg-red-500/30 border border-red-400/40 text-red-200"
-                      : "bg-white/10 border border-white/10 text-white/80 hover:bg-white/20",
-                  )}
+                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10"
                 >
                   <img
                     src={getFavicon(site.url)}
-                    alt={site.label}
+                    alt={site.label ?? site.url}
                     className="w-4 h-4 rounded-sm shrink-0"
                   />
-                  <span className="truncate">{site.label}</span>
-                  {blocked && (
-                    <ShieldOff className="h-3 w-3 ml-auto text-red-300 shrink-0" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Danh sách trang tùy chỉnh */}
-        {customSites.length > 0 && (
-          <div className="p-3">
-            <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
-              Tùy chỉnh
-            </p>
-            <div className="flex flex-col gap-1.5">
-              {customSites.map((site) => (
-                <div
-                  key={site.id}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/20 border border-red-400/30"
-                >
-                  <Globe className="h-3.5 w-3.5 text-red-300 shrink-0" />
-                  <span className="text-sm text-red-100 flex-1 truncate">
-                    {site.url}
+                  <span className="text-sm text-white/80 flex-1 truncate">
+                    {site.label ?? site.url}
                   </span>
-                  <button
-                    onClick={() => handleRemove(site.id)}
-                    className="text-white/40 hover:text-red-400 transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
                 </div>
               ))}
             </div>
           </div>
+        ) : (
+          <>
+            {/* Trang phổ biến */}
+            <div className="p-3 border-b border-white/10">
+              <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
+                Chọn nhanh
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {PRESET_SITES.map((site) => {
+                  const blocked = isPresetBlocked(site.id);
+                  return (
+                    <button
+                      key={site.id}
+                      onClick={() => togglePreset(site)}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150",
+                        blocked
+                          ? "bg-red-500/30 border border-red-400/40 text-red-200"
+                          : "bg-white/10 border border-white/10 text-white/80 hover:bg-white/20",
+                      )}
+                    >
+                      <img
+                        src={getFavicon(site.url)}
+                        alt={site.label}
+                        className="w-4 h-4 rounded-sm shrink-0"
+                      />
+                      <span className="truncate">{site.label}</span>
+                      {blocked && (
+                        <ShieldOff className="h-3 w-3 ml-auto text-red-300 shrink-0" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Danh sách trang tùy chỉnh */}
+            {customSites.length > 0 && (
+              <div className="p-3">
+                <p className="text-xs text-white/50 mb-2 font-medium uppercase tracking-wider">
+                  Tùy chỉnh
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {customSites.map((site) => (
+                    <div
+                      key={site.id}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/20 border border-red-400/30"
+                    >
+                      <Globe className="h-3.5 w-3.5 text-red-300 shrink-0" />
+                      <span className="text-sm text-red-100 flex-1 truncate">
+                        {site.url}
+                      </span>
+                      <button
+                        onClick={() => handleRemove(site.id)}
+                        className="text-white/40 hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {blockedSites.length === 0 && (
