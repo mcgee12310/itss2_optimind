@@ -10,21 +10,18 @@ import TaskListWidget from "@/components/study/task-list";
 import FocusChartWidget from "@/components/study/focus-chart";
 import CameraWidget from "@/components/study/camera-widget";
 
-type FocusSample = { score: number; ts: number };
 
 const StudyPage: FC = () => {
   const [showTasks, setShowTasks] = useState<boolean>(true);
   const [isRunning, setIsRunning] = useState<boolean>(false);
   const [isFocusMode, setIsFocusMode] = useState<boolean>(true);
   const [focusScore, setFocusScore] = useReactState<number>(0);
-  const [focusSample, setFocusSample] = useReactState<FocusSample | null>(null);
 
   useFocusScoring(isRunning, isFocusMode);
 
   // Callback to receive score from camera
-  const handleScoreUpdate = useCallback((sample: FocusSample) => {
-    setFocusScore(sample.score);
-    setFocusSample(sample);
+  const handleScoreUpdate = useCallback((score: number) => {
+    setFocusScore(score);
   }, []);
 
   return (
@@ -58,7 +55,7 @@ const StudyPage: FC = () => {
             {/* Widget 3: Chart */}
             <FocusChartWidget
               isRunning={isRunning}
-              sample={focusSample}
+              currentFocusScore={focusScore}
             />
           </div>
         </div>
