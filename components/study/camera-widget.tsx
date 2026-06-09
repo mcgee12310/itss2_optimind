@@ -11,7 +11,7 @@ const DEFAULT_W = 320;
 const DEFAULT_H = 240;
 
 interface CameraWidgetProps {
-  onScoreUpdate?: (score: number) => void;
+  onScoreUpdate?: (sample: { score: number; ts: number }) => void;
 }
 
 const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
@@ -130,27 +130,7 @@ const CameraWidget: FC<CameraWidgetProps> = ({ onScoreUpdate }) => {
         )}
       </button>
 
-      {/* Focus Score — top-left, only when running */}
-      {isOn && cameraReady && (
-        <div
-          className={cn(
-            "absolute top-2 left-2 z-10 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-sm",
-            "transition-all duration-300",
-            engaged
-              ? "bg-green-500/70 text-white"
-              : "bg-yellow-500/70 text-white"
-          )}
-        >
-          {focusScore}/100
-        </div>
-      )}
 
-      {/* Status text — bottom-left */}
-      {isOn && cameraReady && (
-        <div className="absolute bottom-2 left-2 z-10 text-xs text-white/60 backdrop-blur-sm px-2 py-1 bg-black/30 rounded">
-          {status}
-        </div>
-      )}
 
       {/* Resize handle */}
       <div

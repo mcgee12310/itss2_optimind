@@ -117,16 +117,25 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 							setCurrentMode("longBreak");
 							setTimer(configLongBreakTime * 60);
 							onFocusModeChange?.(false); // Đang nghỉ dài
+							setIsRunning(true); // Tự động bật timer nghỉ dài
 						} else {
-							setCompletedCycles(newCompleted);
 							setCurrentMode("break");
 							setTimer(configBreakTime * 60);
 							onFocusModeChange?.(false); // Đang nghỉ
+							setIsRunning(true); // Tự động bật timer nghỉ
 						}
+					} else if (currentMode === "longBreak"){
+                        setCurrentMode("focus");
+                        setTimer(configFocusTime * 60);
+                        setCompletedCycles(0);
+                        onFocusModeChange?.(true);
+                        // Xong timer thì quay về trạng thái ban đầu và ngừng
 					} else {
+						setCompletedCycles(prev => prev + 1); // Tăng số đếm
 						setCurrentMode("focus");
 						setTimer(configFocusTime * 60);
 						onFocusModeChange?.(true); // Quay lại focus
+						setIsRunning(true); // Tự động bật timer tập trung
 					}
 				}
 			} else if (isRunning) {
@@ -159,7 +168,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 				setTimer(configCountdownTime * 60);
 			}
 		}
-	}, [configFocusTime, configBreakTime, configLongBreakTime, configCycles, configCountdownTime, timerMode, isRunning]);
+	}, [configFocusTime, configBreakTime, configLongBreakTime, configCycles, configCountdownTime, timerMode]);
 
 	// --- Old Timer Effect (Replaced by Web Worker) ---
 	// Removed: setInterval-based timer is now handled by timer.worker.ts
@@ -280,18 +289,12 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 
 							{/* Chu kỳ (Chỉ hiển thị ở mode Pomodoro) */}
 							{timerMode === "pomodoro" && (
-								<div className="flex gap-1.5">
-									{[...Array(configCycles)].map((_, i) => (
-										<div
-											key={i}
-											className={cn(
-												"h-3 w-3 rounded-full transition-colors",
-												i < completedCycles
-													? "bg-green-400"
-													: "bg-white/30"
-											)}
-										/>
-									))}
+								<div className="flex items-center gap-2 text-xl font-medium">
+									<div className="flex items-center justify-center w-6 h-6 rounded-full bg-blue-500/30 border border-blue-300">
+										<span className="font-bold">{completedCycles + 1}</span>
+									</div>
+									<span className="text-white/60">/</span>
+									<span className="text-white/60">{configCycles}</span>
 								</div>
 							)}
 						</div>
@@ -509,6 +512,7 @@ const PomodoroTimer: FC<PomodoroTimerProps> = ({
 												cycles: Number(e.target.value),
 											}))
 										}
+										onKeyDown={(e) => e.preventDefault()} // Chống chỉnh sửa bằng đánh máy
 										className="bg-white/10 border-white/30"
 									/>
 								</div>

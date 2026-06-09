@@ -25,7 +25,7 @@ function isIgnoredMediapipeCpuInfoError(error: unknown) {
  */
 export function useEngagementAnalyzer(
   isActive: boolean,
-  onScoreUpdate?: (score: number) => void
+  onScoreUpdate?: (sample: { score: number; ts: number }) => void
 ) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -40,7 +40,7 @@ export function useEngagementAnalyzer(
   const streamRef = useRef<MediaStream | null>(null);
   const animationIdRef = useRef<number | null>(null);
   const isActiveRef = useRef<boolean>(isActive);
-  const onScoreUpdateRef = useRef<((score: number) => void) | undefined>(onScoreUpdate);
+  const onScoreUpdateRef = useRef<((sample: { score: number; ts: number }) => void) | undefined>(onScoreUpdate);
   const lastDetectionRef = useRef<number>(0);
   const lastUIUpdateRef = useRef<number>(0);
   const noFaceCountRef = useRef<number>(0);
@@ -205,7 +205,7 @@ export function useEngagementAnalyzer(
                 setFocusScore(next);
                 setEngaged(false);
                 setStatus("📭 Không phát hiện khuôn mặt");
-                onScoreUpdateRef.current?.(next);
+                onScoreUpdateRef.current?.({ score: next, ts: now });
               }
             } else {
               noFaceCountRef.current = 0;
@@ -222,7 +222,7 @@ export function useEngagementAnalyzer(
                   setFocusScore(score);
                   setEngaged(isEng);
                   setStatus(isEng ? `✓ Tập trung (${score}/100)` : `✗ Không tập trung (${score}/100)`);
-                  onScoreUpdateRef.current?.(score);
+                  onScoreUpdateRef.current?.({ score, ts: now });
                 }
               }
             }
