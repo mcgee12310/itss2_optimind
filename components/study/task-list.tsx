@@ -144,7 +144,7 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
           {!ext.installed ? (
             <button
               onClick={() => setShowExtModal(true)}
-              className="text-xs font-semibold px-3 py-1 rounded-full bg-white/10 border border-white/10 text-white/80 hover:bg-white/20 transition-all duration-200"
+              className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-600/30 border border-white/10 text-white/80 hover:bg-indigo-800/30 transition-all duration-200"
             >
               <Puzzle className="mr-1 inline h-3.5 w-3.5" />
               Cài extension
