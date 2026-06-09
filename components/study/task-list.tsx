@@ -289,7 +289,7 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
           </>
         )}
 
-        {blockedSites.length === 0 && (
+        {blockedSites.length === 0 && isBlocking && (
           <div className="p-6 text-center text-white/30 text-sm">
             <ShieldOff className="h-8 w-8 mx-auto mb-2 opacity-30" />
             Chưa chặn trang nào
