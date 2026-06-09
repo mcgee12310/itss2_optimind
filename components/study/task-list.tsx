@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useExtensionSync } from "@/hooks/useExtensionSync";
+import ExtensionGuideModal from "@/components/app/ExtensionGuideModal";
 
 const glassEffect =
   "bg-black/30 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg";
@@ -51,6 +52,7 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
   const [blockedSites, setBlockedSitesLocal] = useState<BlockedSite[]>([]);
   const [inputUrl, setInputUrl] = useState("");
   const [isBlocking, setIsBlockingLocal] = useState(false);
+  const [showExtModal, setShowExtModal] = useState(false);
 
   // Load initial state from extension once it responds
   useEffect(() => {
@@ -137,18 +139,17 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-emerald-400" />
           <p className="text-lg font-semibold">Chặn trang web</p>
-          {ext.installed ? (
-            <span className="flex items-center gap-1 text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
-              <Puzzle className="h-3 w-3" /> Đã kết nối
-            </span>
-          ) : (
-            <span className="flex items-center gap-1 text-xs bg-white/10 text-white/40 border border-white/10 px-2 py-0.5 rounded-full">
-              <Puzzle className="h-3 w-3" /> Chưa cài extension
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2">
-          {!ext.installed ? null : (
+          {!ext.installed ? (
+            <button
+              onClick={() => setShowExtModal(true)}
+              className="text-xs font-semibold px-3 py-1 rounded-full bg-indigo-600/30 border border-white/10 text-white/80 hover:bg-indigo-800/30 transition-all duration-200"
+            >
+              <Puzzle className="mr-1 inline h-3.5 w-3.5" />
+              Cài extension
+            </button>
+          ) : (
             <button
               onClick={handleToggleBlock}
               className={cn(
@@ -276,10 +277,11 @@ const SiteBlockerWidget: FC<SiteBlockerWidgetProps> = ({ show, onClose }) => {
               "text-xs font-semibold",
               isBlocking ? "text-red-400" : "text-white/40",
             )}
-          >
-          </span>
+          ></span>
         </div>
       )}
+
+      <ExtensionGuideModal open={showExtModal} onOpenChange={setShowExtModal} />
     </div>
   );
 };
