@@ -3,13 +3,8 @@
   "name": "OptiMind - Chặn Web",
   "version": "1.0.0",
   "description": "Chặn các trang web gây xao nhãng, giúp bạn tập trung học tập với OptiMind",
-  "permissions": [
-    "declarativeNetRequest",
-    "storage"
-  ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
+  "permissions": ["declarativeNetRequest", "storage"],
+  "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
@@ -22,23 +17,16 @@
         "http://localhost/*",
         "http://localhost:3000/*",
         "http://localhost:3001/*",
-        "https://localhost/*",
-        "https://itss2-optimind.vercel.app/*"
+        "https://localhost/*"
       ],
-      "js": [
-        "content.js"
-      ],
+      "js": ["content.js"],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": [
-        "blocked.html"
-      ],
-      "matches": [
-        "<all_urls>"
-      ]
+      "resources": ["blocked.html"],
+      "matches": ["<all_urls>"]
     }
   ]
 }
